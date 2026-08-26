@@ -1,19 +1,25 @@
 FROM python:3.12-slim
 
-WORKDIR /app
-
-# Install system dependencies
+# Install Node.js for building frontend
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    gcc nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies from backend/
-COPY backend/requirements.txt .
+WORKDIR /app
+
+# Install Python dependencies
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend code
-COPY backend/ .
+# Copy frontend and build it
+COPY frontend/ ./frontend/
+RUN cd frontend && npm install && npm run build
+
+# Copy backend code
+COPY backend/ ./backend/
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start combined server (API + Frontend)
+WORKDIR /app/backend
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

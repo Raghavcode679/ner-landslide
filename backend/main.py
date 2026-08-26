@@ -796,3 +796,26 @@ def root():
             "ws": "/ws/alerts",
         },
     }
+
+
+# ---------- Serve frontend (when built) ----------
+import os as _os
+from fastapi.responses import FileResponse as _FileResponse
+
+_DIST_DIR = _os.path.join(_os.path.dirname(__file__), '..', 'frontend', 'dist')
+if _os.path.isdir(_DIST_DIR):
+    _ASSETS_DIR = _os.path.join(_DIST_DIR, 'assets')
+    if _os.path.isdir(_ASSETS_DIR):
+        app.mount('/assets', StaticFiles(directory=_ASSETS_DIR), name='static-assets')
+
+    @app.get('/{full_path:path}')
+    async def _serve_frontend(full_path: str):
+        if full_path.startswith('api/') or full_path.startswith('ws/'):
+            raise HTTPException(status_code=404)
+        file_path = _os.path.join(_DIST_DIR, full_path)
+        if _os.path.isfile(file_path):
+            return _FileResponse(file_path)
+        index = _os.path.join(_DIST_DIR, 'index.html')
+        if _os.path.isfile(index):
+            return _FileResponse(index)
+        raise HTTPException(status_code=404)

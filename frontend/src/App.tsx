@@ -110,12 +110,12 @@ const roadColors: Record<string, string> = { open: '#22c55e', blocked: '#ef4444'
 
 // ============ MULTILINGUAL ============
 const LANGUAGES: Record<string, Record<string, string>> = {
-  en: { dashboard: 'Dashboard', zones: 'Zones', alerts: 'Alerts', roads: 'Roads', villages: 'Villages', reports: 'Reports', weather: 'Weather', predictions: 'Predictions', report_now: 'Report Now', title: 'NER Landslide Early Warning System', subtitle: 'AI-Powered Real-Time Disaster Monitoring', risk_summary: 'Risk Summary', road_status: 'Road Connectivity', village_status: 'Village Connectivity', active_alerts: 'Active Alerts', top_risk: 'Top Risk Zones', simulate: 'Simulate Update', language: 'Language', search: 'Search zones...' },
-  hi: { dashboard: 'डैशबोर्ड', zones: 'क्षेत्र', alerts: 'अलर्ट', roads: 'सड़कें', villages: 'गाँव', reports: 'रिपोर्ट', weather: 'मौसम', predictions: 'भविष्यवाणी', report_now: 'अभी रिपोर्ट करें', title: 'पूर्वोत्तर भूस्खलन प्रारंभिक चेतावनी प्रणाली', subtitle: 'AI-संचालित वास्तविक समय आपदा निगरानी', risk_summary: 'जोखिम सारांश', road_status: 'सड़क कनेक्टिविटी', village_status: 'गाँव कनेक्टिविटी', active_alerts: 'सक्रिय अलर्ट', top_risk: 'उच्च जोखिम क्षेत्र', simulate: 'अपडेट अनुकरण', language: 'भाषा', search: 'क्षेत्र खोजें...' },
-  bn: { dashboard: 'ড্যাশবোর্ড', zones: 'অঞ্চল', alerts: 'সতর্কতা', roads: 'সড়ক', villages: 'গ্রাম', reports: 'প্রতিবেদন', weather: 'আবহাওয়া', predictions: 'পূর্বাভাস', report_now: 'এখনই জানান', title: 'উত্তর-পূর্ব ভূমিধস প্রাথমিক সতর্কতা সিস্টেম', subtitle: 'AI-চালিত রিয়েল-টাইম দুর্যোগ পর্যবেক্ষণ', risk_summary: 'ঝুঁকি সারসংক্ষেপ', road_status: 'সড়ক সংযোগ', village_status: 'গ্রাম সংযোগ', active_alerts: 'সক্রিয় সতর্কতা', top_risk: 'সর্বোচ্চ ঝুঁকি অঞ্চল', simulate: 'আপডেট সিমুলেট', language: 'ভাষা', search: 'অঞ্চল খুঁজুন...' },
-  as: { dashboard: 'ডেশবৰ্ড', zones: 'অঞ্চল', alerts: 'সতৰ্কতা', roads: 'ৰাস্তা', villages: 'গাঁও', reports: 'প্ৰতিবেদন', weather: 'বতৰা', predictions: 'পূৰ্বানুমান', report_now: 'এতিয়াই সঁচাৰ কৰক', title: 'উত্তৰ-পূৱ ভূমিধ্বংস আগতীয়া সতৰ্কতা ব্যৱস্থা', subtitle: 'AI-চালিত ৰিয়েল-টাইম দুৰ্ঘটনা নিৰীক্ষণ', risk_summary: 'বিপদৰ সাৰাংশ', road_status: 'ৰাস্তা সংযোগ', village_status: 'গাঁও সংযোগ', active_alerts: 'সক্ৰিয় সতৰ্কতা', top_risk: 'চৰ্বোচ্চ বিপদ অঞ্চল', simulate: 'আপডেট চিমুলেট', language: 'ভাষা', search: 'অঞ্চল বিচাৰক...' },
-  mr: { dashboard: 'डॅशबोर्ड', zones: 'झोने', alerts: 'सूचना', roads: 'मार्ग', villages: 'गावे', reports: 'अहवाल', weather: 'हवामान', predictions: 'अंदाज', report_now: 'आता कळवा', title: 'उत्तर-पूर्व भूस्खलन प्रारंभिक सूचना प्रणाली', subtitle: 'AI-शक्तीवर चालणारी रिअल-टाइम आपत्ती निरीक्षण', risk_summary: 'धोका सारांश', road_status: 'मार्ग कनेक्टिव्हिटी', village_status: 'गाव कनेक्टिव्हिटी', active_alerts: 'सक्रिय सूचना', top_risk: 'सर्वाधिक धोकादायक झोने', simulate: 'अद्यतन सिम्युलेट', language: 'भाषा', search: 'झोने शोधा...' },
-  ta: { dashboard: 'டாஷ்போர்டு', zones: 'மண்டலங்கள்', alerts: 'எச்சரிக்கை', roads: 'சாலைகள்', villages: 'கிராமங்கள்', reports: 'அறிக்கைகள்', weather: 'வானிலை', predictions: 'முன்னறிவிப்பு', report_now: 'இப்போது தெரிவிக்கவும்', title: 'வடகிழக்கு மண்சரிவு முன்னெச்சரிக்கை அமைப்பு', subtitle: 'AI-இயங்கும் நிகழ்நேர பேரிடர் கண்காணிப்பு', risk_summary: 'ஆபத்து சுருக்கம்', road_status: 'சாலை இணைப்பு', village_status: 'கிராம இணைப்பு', active_alerts: 'செயலில் உள்ள எச்சரிக்கை', top_risk: 'அதிக ஆபத்து மண்டலங்கள்', simulate: 'புதுப்பிப்பு சிமுலேஷன்', language: 'மொழி', search: 'மண்டலங்களைத் தேடு...' },
+  en: { dashboard: 'Dashboard', zones: 'Zones', alerts: 'Alerts', roads: 'Roads', villages: 'Villages', reports: 'Reports', weather: 'Weather', predictions: 'Predictions', history: 'History', report_now: 'Report Now', title: 'NER Landslide Early Warning System', subtitle: 'AI-Powered Real-Time Disaster Monitoring', risk_summary: 'Risk Summary', road_status: 'Road Connectivity', village_status: 'Village Connectivity', active_alerts: 'Active Alerts', top_risk: 'Top Risk Zones', simulate: 'Simulate Update', language: 'Language', search: 'Search zones...' },
+  hi: { dashboard: 'डैशबोर्ड', zones: 'क्षेत्र', alerts: 'अलर्ट', roads: 'सड़कें', villages: 'गाँव', reports: 'रिपोर्ट', weather: 'मौसम', predictions: 'भविष्यवाणी', history: 'इतिहास', report_now: 'अभी रिपोर्ट करें', title: 'पूर्वोत्तर भूस्खलन प्रारंभिक चेतावनी प्रणाली', subtitle: 'AI-संचालित वास्तविक समय आपदा निगरानी', risk_summary: 'जोखिम सारांश', road_status: 'सड़क कनेक्टिविटी', village_status: 'गाँव कनेक्टिविटी', active_alerts: 'सक्रिय अलर्ट', top_risk: 'उच्च जोखिम क्षेत्र', simulate: 'अपडेट अनुकरण', language: 'भाषा', search: 'क्षेत्र खोजें...' },
+  bn: { dashboard: 'ড্যাশবোর্ড', zones: 'অঞ্চল', alerts: 'সতর্কতা', roads: 'সড়ক', villages: 'গ্রাম', reports: 'প্রতিবেদন', weather: 'আবহাওয়া', predictions: 'পূর্বাভাস', history: 'ইতিহাস', report_now: 'এখনই জানান', title: 'উত্তর-পূর্ব ভূমিধস প্রাথমিক সতর্কতা সিস্টেম', subtitle: 'AI-চালিত রিয়েল-টাইম দুর্যোগ পর্যবেক্ষণ', risk_summary: 'ঝুঁকি সারসংক্ষেপ', road_status: 'সড়ক সংযোগ', village_status: 'গ্রাম সংযোগ', active_alerts: 'সক্রিয় সতর্কতা', top_risk: 'সর্বোচ্চ ঝুঁকি অঞ্চল', simulate: 'আপডেট সিমুলেট', language: 'ভাষা', search: 'অঞ্চল খুঁজুন...' },
+  as: { dashboard: 'ডেশবৰ্ড', zones: 'অঞ্চল', alerts: 'সতৰ্কতা', roads: 'ৰাস্তা', villages: 'গাঁও', reports: 'প্ৰতিবেদন', weather: 'বতৰা', predictions: 'পূৰ্বানুমান', history: 'ইতিহাস', report_now: 'এতিয়াই সঁচাৰ কৰক', title: 'উত্তৰ-পূৱ ভূমিধ্বংস আগতীয়া সতৰ্কতা ব্যৱস্থা', subtitle: 'AI-চালিত ৰিয়েল-টাইম দুৰ্ঘটনা নিৰীক্ষণ', risk_summary: 'বিপদৰ সাৰাংশ', road_status: 'ৰাস্তা সংযোগ', village_status: 'গাঁও সংযোগ', active_alerts: 'সক্ৰিয় সতৰ্কতা', top_risk: 'চৰ্বোচ্চ বিপদ অঞ্চল', simulate: 'আপডেট চিমুলেট', language: 'ভাষা', search: 'অঞ্চল বিচাৰক...' },
+  mr: { dashboard: 'डॅशबोर्ड', zones: 'झोने', alerts: 'सूचना', roads: 'मार्ग', villages: 'गावे', reports: 'अहवाल', weather: 'हवामान', predictions: 'अंदाज', history: 'इतिहास', report_now: 'आता कळवा', title: 'उत्तर-पूर्व भूस्खलन प्रारंभिक सूचना प्रणाली', subtitle: 'AI-शक्तीवर चालणारी रिअल-टाइम आपत्ती निरीक्षण', risk_summary: 'धोका सारांश', road_status: 'मार्ग कनेक्टिव्हिटी', village_status: 'गाव कनेक्टिव्हिटी', active_alerts: 'सक्रिय सूचना', top_risk: 'सर्वाधिक धोकादायक झोने', simulate: 'अद्यतन सिम्युलेट', language: 'भाषा', search: 'झोने शोधा...' },
+  ta: { dashboard: 'டாஷ்போர்டு', zones: 'மண்டலங்கள்', alerts: 'எச்சரிக்கை', roads: 'சாலைகள்', villages: 'கிராமங்கள்', reports: 'அறிக்கைகள்', weather: 'வானிலை', predictions: 'முன்னறிவிப்பு', history: 'வரலாறு', report_now: 'இப்போது தெரிவிக்கவும்', title: 'வடகிழக்கு மண்சரிவு முன்னெச்சரிக்கை அமைப்பு', subtitle: 'AI-இயங்கும் நிகழ்நேர பேரிடர் கண்காணிப்பு', risk_summary: 'ஆபத்து சுருக்கம்', road_status: 'சாலை இணைப்பு', village_status: 'கிராம இணைப்பு', active_alerts: 'செயலில் உள்ள எச்சரிக்கை', top_risk: 'அதிக ஆபத்து மண்டலங்கள்', simulate: 'புதுப்பிப்பு சிமுலேஷன்', language: 'மொழி', search: 'மண்டலங்களைத் தேடு...' },
 };
 
 // ============ MAP COMPONENT ============
@@ -132,6 +132,53 @@ function StatCard({ label, value, icon, color }: { label: string; value: string 
       <div style={{ fontSize: 24, marginBottom: 4 }}>{icon}</div>
       <div style={{ fontSize: 28, fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+// ============ HISTORICAL LANDSLIDES PAGE ============
+function HistoryPage() {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAPI<any>('/historical-landslides')
+      .then(d => setRecords(d.records || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const severityColors: Record<string, string> = { critical: '#ef4444', high: '#f97316', moderate: '#eab308', low: '#22c55e' };
+  const totalCasualties = records.reduce((s: number, r: any) => s + (r.casualties || 0), 0);
+  const totalDisplaced = records.reduce((s: number, r: any) => s + (r.displaced || 0), 0);
+  const totalBlocked = records.filter((r: any) => r.road_blocked).length;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', marginBottom: 16 }}>📜 Historical Landslide Records — NER Region</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Total Events</div><div style={{ fontSize: 24, fontWeight: 700, color: '#60a5fa' }}>{records.length}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Casualties</div><div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>{totalCasualties}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>People Displaced</div><div style={{ fontSize: 24, fontWeight: 700, color: '#f97316' }}>{totalDisplaced.toLocaleString()}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Roads Blocked</div><div style={{ fontSize: 24, fontWeight: 700, color: '#eab308' }}>{totalBlocked}</div></div>
+      </div>
+      <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px 100px 100px', gap: 0, padding: '10px 16px', background: '#0f172a', borderBottom: '1px solid #334155', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+          <div>Date</div><div>Zone / Description</div><div>Type</div><div>Severity</div><div>Casualties</div><div>Displaced</div>
+        </div>
+        {loading ? (
+          <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Loading records...</div>
+        ) : records.map((r: any) => (
+          <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px 100px 100px', gap: 0, padding: '12px 16px', borderBottom: '1px solid #1e293b', fontSize: 13, alignItems: 'start' }}>
+            <div style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{r.date}</div>
+            <div><div style={{ fontWeight: 600, color: '#e2e8f0' }}>{r.zone} — {r.district}, {r.state}</div><div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{r.description}</div></div>
+            <div style={{ color: '#94a3b8' }}>{r.type}</div>
+            <div><span style={{ background: `${severityColors[r.severity]}22`, color: severityColors[r.severity], padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{r.severity.toUpperCase()}</span></div>
+            <div style={{ color: r.casualties > 0 ? '#ef4444' : '#64748b', fontWeight: r.casualties > 0 ? 700 : 400 }}>{r.casualties}</div>
+            <div style={{ color: '#f97316' }}>{r.displaced.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -463,7 +510,7 @@ export default function App() {
 
       {/* ============ NAV TABS ============ */}
       <nav style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: '0 24px', display: 'flex', gap: 4, overflowX: 'auto' }}>
-        {(['dashboard', 'zones', 'alerts', 'roads', 'villages', 'predictions'] as const).map(p => (
+        {(['dashboard', 'zones', 'alerts', 'roads', 'villages', 'predictions', 'history'] as const).map(p => (
           <button key={p} onClick={() => setPage(p)} style={{ background: page === p ? '#334155' : 'transparent', color: page === p ? '#60a5fa' : '#94a3b8', border: 'none', borderBottom: page === p ? '2px solid #60a5fa' : '2px solid transparent', padding: '12px 16px', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {t[p] || p}
           </button>
@@ -1053,6 +1100,10 @@ export default function App() {
               </div>
             )}
           </div>
+        )}
+
+        {page === 'history' && (
+          <HistoryPage />
         )}
       </main>
 

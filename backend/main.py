@@ -798,6 +798,73 @@ def root():
     }
 
 
+# ---------- SMS Notification Gateway ----------
+try:
+    from services.sms_gateway import sms_gateway
+    SMS_AVAILABLE = True
+except ImportError:
+    SMS_AVAILABLE = False
+
+@app.post("/api/notifications/send")
+async def send_notification(
+    phone: str = Form(...),
+    message: str = Form(...),
+    priority: str = Form("normal"),
+    authorization: Optional[str] = Header(None),
+):
+    if not authorization or authorization != "Bearer admin-token-verified":
+        raise HTTPException(status_code=401, detail="Admin access required")
+    if not SMS_AVAILABLE:
+        return {"status": "demo", "message": "SMS provider not configured. Notifications logged."}
+    result = await sms_gateway.send_sms(phone, message, priority)
+    return result
+
+@app.post("/api/notifications/broadcast")
+async def broadcast_alert(
+    zone_name: str = Form(...),
+    risk_level: str = Form(...),
+    message: str = Form(...),
+    state: str = Form(""),
+    authorization: Optional[str] = Header(None),
+):
+    if not authorization or authorization != "Bearer admin-token-verified":
+        raise HTTPException(status_code=401, detail="Admin access required")
+    if not SMS_AVAILABLE:
+        return {"status": "demo", "message": "SMS provider not configured.", "contacts": []}
+    result = await sms_gateway.broadcast_alert(zone_name, risk_level, message, state)
+    return result
+
+@app.get("/api/notifications/log")
+async def get_notification_log(
+    authorization: Optional[str] = Header(None),
+):
+    if not authorization or authorization != "Bearer admin-token-verified":
+        raise HTTPException(status_code=401, detail="Admin access required")
+    if not SMS_AVAILABLE:
+        return {"log": [], "stats": {"total_sent": 0}}
+    return {"log": sms_gateway.get_notification_log(), "stats": sms_gateway.get_stats()}
+
+# ---------- Historical Landslide Records ----------
+HISTORICAL_LANDSLIDES = [
+    {"id": 1, "date": "2024-06-15", "zone": "Cherrapunji", "district": "East Khasi Hills", "state": "Meghalaya", "latitude": 25.27, "longitude": 91.73, "type": "Rainfall-induced", "severity": "critical", "casualties": 2, "displaced": 450, "road_blocked": True, "description": "Massive landslide after 48h continuous rainfall. NH6 blocked for 72 hours."},
+    {"id": 2, "date": "2024-07-22", "zone": "Tawang", "district": "Tawang", "state": "Arunachal Pradesh", "latitude": 27.58, "longitude": 91.86, "type": "Slope failure", "severity": "high", "casualties": 0, "displaced": 120, "road_blocked": True, "description": "Hill cutting destabilized slope above military road. Multiple cracks reported."},
+    {"id": 3, "date": "2024-08-10", "zone": "Imphal", "district": "Imphal East", "state": "Manipur", "latitude": 24.81, "longitude": 93.94, "type": "Flash flood", "severity": "high", "casualties": 1, "displaced": 280, "road_blocked": False, "description": "River overflow caused bank erosion and residential area flooding."},
+    {"id": 4, "date": "2023-09-05", "zone": "Dzukou Valley", "district": "Kohima", "state": "Nagaland", "latitude": 25.15, "longitude": 93.58, "type": "Earthflow", "severity": "moderate", "casualties": 0, "displaced": 50, "road_blocked": True, "description": "Post-fire vegetation loss triggered slow-moving earthflow."},
+    {"id": 5, "date": "2024-06-28", "zone": "Silchar", "district": "Cachar", "state": "Assam", "latitude": 24.82, "longitude": 92.56, "type": "River bank erosion", "severity": "high", "casualties": 0, 'displaced': 380, "road_blocked": False, "description": "Barak River erosion threatened 3 villages. Emergency embankment built."},
+    {"id": 6, "date": "2024-07-15", "zone": "Champhai Ridge", "district": "Champhai", "state": "Mizoram", "latitude": 24.58, "longitude": 93.81, "type": "Landslide", "severity": "critical", "casualties": 3, "displaced": 200, "road_blocked": True, "description": "Catastrophic failure on steep agricultural slope. Myanmar border road cut off."},
+    {"id": 7, "date": "2023-07-30", "zone": "Jowai", "district": "Jaintia Hills", "state": "Meghalaya", "latitude": 25.29, "longitude": 92.59, "type": "Mining-related", "severity": "moderate", "casualties": 0, "displaced": 75, "road_blocked": False, "description": "Coal mine subsidence caused ground cracking in 3 areas."},
+    {"id": 8, "date": "2024-08-25", "zone": "Dibrugarh", "district": "Dibrugarh", "state": "Assam", "latitude": 27.48, "longitude": 95.02, "type": "Erosion", "severity": "moderate", "casualties": 0, "displaced": 60, "road_blocked": False, "description": "Brahmaputra tributary erosion damaged tea estate roads."},
+    {"id": 9, "date": "2024-05-12", "zone": "Mawsynram", "district": "East Khasi Hills", "state": "Meghalaya", "latitude": 25.42, "longitude": 93.10, "type": "Rainfall-induced", "severity": "critical", "casualties": 1, "displaced": 320, "road_blocked": True, "description": "World's wettest place received 350mm in 24h. Multiple road failures."},
+    {"id": 10, "date": "2023-08-18", "zone": "Ziro Valley", "district": "Lower Subansiri", "state": "Arunachal Pradesh", "latitude": 27.10, "longitude": 93.60, "type": "Slope failure", "severity": "high", "casualties": 0, "displaced": 150, "road_blocked": True, "description": "Apatani tribal area rice terraces collapsed on access road."},
+    {"id": 11, "date": "2024-06-01", "zone": "Kohima", "district": "Kohima", "state": "Nagaland", "latitude": 25.67, "longitude": 94.11, "type": "Construction-triggered", "severity": "moderate", "casualties": 0, "displaced": 90, "road_blocked": False, "description": "Highway widening project destabilized hillside."},
+    {"id": 12, "date": "2024-09-02", "zone": "Aizawl", "district": "Aizawl", "state": "Mizoram", "latitude": 23.73, "longitude": 92.72, "type": "Rainfall-induced", "severity": "high", "casualties": 2, "displaced": 500, "road_blocked": True, "description": "Prolonged monsoon rainfall triggered multiple slides across the city hillsides."},
+]
+
+@app.get("/api/historical-landslides")
+def get_historical_landslides():
+    return {"records": HISTORICAL_LANDSLIDES, "total": len(HISTORICAL_LANDSLIDES)}
+
+
 # ---------- Serve frontend (when built) ----------
 import os as _os
 from fastapi.responses import FileResponse as _FileResponse

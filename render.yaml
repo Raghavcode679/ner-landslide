@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ner-landslide-api
+    runtime: python
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"

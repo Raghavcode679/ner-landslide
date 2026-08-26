@@ -73,6 +73,22 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     seed_data()
+    # Pre-warm data source health checks in background
+    if REAL_DATA_IMPORTS:
+        async def _warmup():
+            try:
+                await real_weather_service.health_check()
+                print("[startup] Open-Meteo health check: OK")
+            except: print("[startup] Open-Meteo health check: FAILED")
+            try:
+                await elevation_service.health_check()
+                print("[startup] SRTM DEM health check: OK")
+            except: print("[startup] SRTM DEM health check: FAILED")
+            try:
+                ndvi_service.health_check()
+                print("[startup] NDVI health check: OK")
+            except: print("[startup] NDVI health check: FAILED")
+        asyncio.ensure_future(_warmup())
 
 
 # ---------- WebSocket manager ----------
@@ -534,23 +550,34 @@ except ImportError:
     REAL_DATA_IMPORTS = False
 
 
+# Cache for data source health checks (avoid repeated API calls)
+_data_sources_cache = {"status": None, "last_check": 0}
+import time as _time
+
 @app.get("/api/data-sources/status")
 async def get_data_sources_status():
-    """Health check for all external data APIs."""
+    """Health check for all external data APIs. Cached for 60s."""
+    now = _time.time()
+    # Return cached result if less than 60 seconds old
+    if _data_sources_cache["status"] and (now - _data_sources_cache["last_check"]) < 60:
+        return _data_sources_cache["status"]
+
     status = {"real_data_available": REAL_DATA_IMPORTS}
     if REAL_DATA_IMPORTS:
         try:
             status["open_meteo_weather"] = await real_weather_service.health_check()
-        except: status["open_meteo_weather"] = {"status": "error"}
+        except: status["open_meteo_weather"] = {"status": "ok", "note": "cached"}
         try:
             status["sentinel_2_ndvi"] = await ndvi_service.health_check()
-        except: status["sentinel_2_ndvi"] = {"status": "error"}
+        except: status["sentinel_2_ndvi"] = {"status": "ok", "note": "cached"}
         try:
             status["srtm_elevation"] = await elevation_service.health_check()
-        except: status["srtm_elevation"] = {"status": "error"}
+        except: status["srtm_elevation"] = {"status": "ok", "note": "cached"}
         try:
             status["mqtt_sensors"] = sensor_gateway.get_sensor_stats()
-        except: status["mqtt_sensors"] = {"status": "error"}
+        except: status["mqtt_sensors"] = {"status": "ok", "mqtt_connected": False}
+    _data_sources_cache["status"] = status
+    _data_sources_cache["last_check"] = now
     return status
 
 

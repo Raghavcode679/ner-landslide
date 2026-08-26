@@ -347,8 +347,13 @@ export default function App() {
         .then(d => { if (d.authenticated) { setIsAdmin(true); loadReports(); } })
         .catch(() => sessionStorage.removeItem('admin_token'));
     }
-    // Load data source status
-    fetchAPI<Record<string, any>>('/data-sources/status').then(setDataSourceStatus).catch(() => {});
+    // Load data source status with retry
+    const loadStatus = (attempt: number) => {
+      fetchAPI<Record<string, any>>('/data-sources/status')
+        .then(setDataSourceStatus)
+        .catch(() => { if (attempt < 3) setTimeout(() => loadStatus(attempt + 1), 3000); });
+    };
+    loadStatus(0);
   }, []);
 
   // Sync real data (admin only)

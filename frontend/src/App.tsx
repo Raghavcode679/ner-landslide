@@ -611,17 +611,20 @@ export default function App() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
                 <h3 style={{ fontSize: 15, marginBottom: 12, color: '#e2e8f0' }}>⚠️ {t.top_risk}</h3>
-                {dashboard.top_risk_zones.map((z: any) => (
-                  <div key={z.id} onClick={() => { setSelectedZone(z); setPage('zones'); }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #334155', cursor: 'pointer' }}>
+                {(dashboard.top_risk_zones || []).length === 0 && (
+                  <p style={{ color: '#64748b', fontSize: 13 }}>Run predictions to see top risk zones.</p>
+                )}
+                {(dashboard.top_risk_zones || []).slice(0, 8).map((z: any) => (
+                  <div key={z.id || z.zone_id || Math.random()} onClick={() => { if (z && z.latitude && z.longitude) { setSelectedZone(z); setPage('zones'); } }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #334155', cursor: 'pointer' }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{z.name}</div>
-                      <div style={{ fontSize: 12, color: '#64748b' }}>{z.district}</div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{z.name || z.zone_name || 'Zone'}</div>
+                      <div style={{ fontSize: 12, color: '#64748b' }}>{z.district || ''}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 80, height: 6, background: '#334155', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ width: `${z.risk_score}%`, height: '100%', background: riskColor[z.risk_level], borderRadius: 3 }} />
+                        <div style={{ width: `${Math.min(100, Math.max(0, z.risk_score || 0))}%`, height: '100%', background: riskColor[z.risk_level] || '#64748b', borderRadius: 3 }} />
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: riskColor[z.risk_level] }}>{z.risk_score}%</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: riskColor[z.risk_level] || '#64748b' }}>{z.risk_score || 0}%</span>
                     </div>
                   </div>
                 ))}
@@ -1242,17 +1245,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ============ LIVE FEED ============ */}
-      {wsMessages.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 20, right: 20, width: 300, maxHeight: 200, overflowY: 'auto', background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 12, zIndex: 999 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#60a5fa', marginBottom: 8 }}>📡 Live Feed</div>
-          {wsMessages.slice(0, 5).map((m, i) => (
-            <div key={i} style={{ fontSize: 11, color: '#94a3b8', padding: '3px 0', borderBottom: '1px solid #334155' }}>
-              <span style={{ color: '#64748b' }}>[{m.type}]</span> {m.zone_name || m.road_name || JSON.stringify(m).substring(0, 60)}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Live feed handled silently in background via WebSocket */}
 
       {/* ============ FOOTER ============ */}
       <footer style={{ padding: '16px 24px', textAlign: 'center', color: '#475569', fontSize: 12, borderTop: '1px solid #1e293b' }}>

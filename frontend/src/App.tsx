@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, Legend, RadarChart,
-  PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
-} from 'recharts';
+import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import {
   LayoutDashboard, MapPin, AlertTriangle, Route, Home, Brain,
-  History, FileText, Shield, ShieldOff, Globe, RefreshCw,
-  Radio, ChevronRight, TrendingUp, AlertCircle, Mountain,
-  CloudRain, Activity, Users, Eye, EyeOff, Camera, X,
-  Send, Loader2, CheckCircle2, XCircle, Thermometer, Wind,
-  Droplets, Waves, Map as MapIcon, BarChart3, Settings
+  History, FileText, Shield, ShieldOff, RefreshCw, Radio,
+  Camera, X, Send, Loader2, CheckCircle2, XCircle,
+  Mountain, CloudRain, Activity, Users, BarChart3, TrendingUp,
+  AlertCircle, Droplets, Thermometer, Wind, Waves, Map as MapIcon
 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
@@ -104,17 +99,16 @@ function useWebSocket(url: string, onMessage: (data: any) => void) {
 
 // ============ CONSTANTS ============
 const riskColor: Record<string, string> = { low: '#22c55e', moderate: '#eab308', high: '#f97316', critical: '#ef4444' };
-const riskBg: Record<string, string> = { low: 'rgba(34,197,94,0.08)', moderate: 'rgba(234,179,8,0.08)', high: 'rgba(249,115,22,0.08)', critical: 'rgba(239,68,68,0.08)' };
+const riskBg: Record<string, string> = { low: 'rgba(34,197,94,0.15)', moderate: 'rgba(234,179,8,0.15)', high: 'rgba(249,115,22,0.15)', critical: 'rgba(239,68,68,0.15)' };
 const roadColors: Record<string, string> = { open: '#22c55e', blocked: '#ef4444', partial: '#eab308', damaged: '#f97316' };
-const badgeClass: Record<string, string> = { low: 'badge-low', moderate: 'badge-moderate', high: 'badge-high', critical: 'badge-critical' };
 
 const LANGUAGES: Record<string, Record<string, string>> = {
-  en: { dashboard: 'Dashboard', zones: 'Zones', alerts: 'Alerts', roads: 'Roads', villages: 'Villages', reports: 'Reports', weather: 'Weather', predictions: 'Predictions', history: 'History', report_now: 'Report Now', title: 'NER Landslide Early Warning', subtitle: 'AI-Powered Disaster Monitoring', risk_summary: 'Risk Summary', road_status: 'Road Status', village_status: 'Village Connectivity', active_alerts: 'Active Alerts', top_risk: 'Top Risk Zones', simulate: 'Simulate Update', language: 'Language', search: 'Search zones...' },
-  hi: { dashboard: 'डैशबोर्ड', zones: 'क्षेत्र', alerts: 'अलर्ट', roads: 'सड़कें', villages: 'गाँव', reports: 'रिपोर्ट', weather: 'मौसम', predictions: 'भविष्यवाणी', history: 'इतिहास', report_now: 'अभी रिपोर्ट करें', title: 'पूर्वोत्तर भूस्खलन चेतावनी', subtitle: 'AI-संचालित आपदा निगरानी', risk_summary: 'जोखिम सारांश', road_status: 'सड़क स्थिति', village_status: 'गाँव कनेक्टिविटी', active_alerts: 'सक्रिय अलर्ट', top_risk: 'उच्च जोखिम क्षेत्र', simulate: 'अपडेट अनुकरण', language: 'भाषा', search: 'क्षेत्र खोजें...' },
-  bn: { dashboard: 'ড্যাশবোর্ড', zones: 'অঞ্চল', alerts: 'সতর্কতা', roads: 'সড়ক', villages: 'গ্রাম', reports: 'প্রতিবেদন', weather: 'আবহাওয়া', predictions: 'পূর্বাভাস', history: 'ইতিহাস', report_now: 'এখনই জানান', title: 'উত্তর-পূর্ব ভূমিধস সতর্কতা', subtitle: 'AI-চালিত দুর্যোগ পর্যবেক্ষণ', risk_summary: 'ঝুঁকি সারসংক্ষেপ', road_status: 'সড়ক স্থিতি', village_status: 'গ্রাম সংযোগ', active_alerts: 'সক্রিয় সতর্কতা', top_risk: 'সর্বোচ্চ ঝুঁকি অঞ্চল', simulate: 'আপডেট সিমুলেট', language: 'ভাষা', search: 'অঞ্চল খুঁজুন...' },
-  as: { dashboard: 'ডেশবৰ্ড', zones: 'অঞ্চল', alerts: 'সতৰ্কতা', roads: 'ৰাস্তা', villages: 'গাঁও', reports: 'প্ৰতিবেদন', weather: 'বতৰা', predictions: 'পূৰ্বানুমান', history: 'ইতিহাস', report_now: 'এতিয়াই সঁচাৰ কৰক', title: 'উত্তৰ-পূৱ ভূমিধ্বংস সতৰ্কতা', subtitle: 'AI-চালিত দুৰ্ঘটনা নিৰীক্ষণ', risk_summary: 'বিপদৰ সাৰাংশ', road_status: 'ৰাস্তা স্থিতি', village_status: 'গাঁও সংযোগ', active_alerts: 'সক্ৰিয় সতৰ্কতা', top_risk: 'চৰ্বোচ্চ বিপদ অঞ্চল', simulate: 'আপডেট চিমুলেট', language: 'ভাষা', search: 'অঞ্চল বিচাৰক...' },
-  mr: { dashboard: 'डॅशबोर्ड', zones: 'झोने', alerts: 'सूचना', roads: 'मार्ग', villages: 'गावे', reports: 'अहवाल', weather: 'हवामान', predictions: 'अंदाज', history: 'इतिहास', report_now: 'आता कळवा', title: 'उत्तर-पूर्व भूस्खलन सूचना', subtitle: 'AI-शक्तीवर आपत्ती निरीक्षण', risk_summary: 'धोका सारांश', road_status: 'मार्ग स्थिती', village_status: 'गाव कनेक्टिव्हिटी', active_alerts: 'सक्रिय सूचना', top_risk: 'सर्वाधिक धोकादायक', simulate: 'अद्यतन सिम्युलेट', language: 'भाषा', search: 'झोने शोधा...' },
-  ta: { dashboard: 'டாஷ்போர்டு', zones: 'மண்டலங்கள்', alerts: 'எச்சரிக்கை', roads: 'சாலைகள்', villages: 'கிராமங்கள்', reports: 'அறிக்கைகள்', weather: 'வானிலை', predictions: 'முன்னறிவிப்பு', history: 'வரலாறு', report_now: 'இப்போது தெரிவிக்கவும்', title: 'வடகிழக்கு மண்சரிவு எச்சரிக்கை', subtitle: 'AI-இயங்கும் பேரிடர் கண்காணிப்பு', risk_summary: 'ஆபத்து சுருக்கம்', road_status: 'சாலை நிலை', village_status: 'கிராம இணைப்பு', active_alerts: 'செயலில் உள்ள எச்சரிக்கை', top_risk: 'அதிக ஆபத்து மண்டலங்கள்', simulate: 'புதுப்பிப்பு சிமுலேஷன்', language: 'மொழி', search: 'மண்டலங்களைத் தேடு...' },
+  en: { dashboard: 'Dashboard', zones: 'Zones', alerts: 'Alerts', roads: 'Roads', villages: 'Villages', reports: 'Reports', weather: 'Weather', predictions: 'Predictions', history: 'History', report_now: 'Report Now', title: 'NER Landslide Early Warning System', subtitle: 'AI-Powered Real-Time Disaster Monitoring', risk_summary: 'Risk Summary', road_status: 'Road Connectivity', village_status: 'Village Connectivity', active_alerts: 'Active Alerts', top_risk: 'Top Risk Zones', simulate: 'Simulate Update', language: 'Language', search: 'Search zones...' },
+  hi: { dashboard: 'डैशबोर्ड', zones: 'क्षेत्र', alerts: 'अलर्ट', roads: 'सड़कें', villages: 'गाँव', reports: 'रिपोर्ट', weather: 'मौसम', predictions: 'भविष्यवाणी', history: 'इतिहास', report_now: 'अभी रिपोर्ट करें', title: 'पूर्वोत्तर भूस्खलन प्रारंभिक चेतावनी प्रणाली', subtitle: 'AI-संचालित वास्तविक समय आपदा निगरानी', risk_summary: 'जोखिम सारांश', road_status: 'सड़क कनेक्टिविटी', village_status: 'गाँव कनेक्टिविटी', active_alerts: 'सक्रिय अलर्ट', top_risk: 'उच्च जोखिम क्षेत्र', simulate: 'अपडेट अनुकरण', language: 'भाषा', search: 'क्षेत्र खोजें...' },
+  bn: { dashboard: 'ড্যাশবোর্ড', zones: 'অঞ্চল', alerts: 'সতর্কতা', roads: 'সড়ক', villages: 'গ্রাম', reports: 'প্রতিবেদন', weather: 'আবহাওয়া', predictions: 'পূর্বাভাস', history: 'ইতিহাস', report_now: 'এখনই জানান', title: 'উত্তর-পূর্ব ভূমিধস প্রাথমিক সতর্কতা সিস্টেম', subtitle: 'AI-চালিত রিয়েল-টাইম দুর্যোগ পর্যবেক্ষণ', risk_summary: 'ঝুঁকি সারসংক্ষেপ', road_status: 'সড়ক সংযোগ', village_status: 'গ্রাম সংযোগ', active_alerts: 'সক্রিয় সতর্কতা', top_risk: 'সর্বোচ্চ ঝুঁকি অঞ্চল', simulate: 'আপডেট সিমুলেট', language: 'ভাষা', search: 'অঞ্চল খুঁজুন...' },
+  as: { dashboard: 'ডেশবৰ্ড', zones: 'অঞ্চল', alerts: 'সতৰ্কতা', roads: 'ৰাস্তা', villages: 'গাঁও', reports: 'প্ৰতিবেদন', weather: 'বতৰা', predictions: 'পূৰ্বানুমান', history: 'ইতিহাস', report_now: 'এতিয়াই সঁচাৰ কৰক', title: 'উত্তৰ-পূৱ ভূমিধ্বংস আগতীয়া সতৰ্কতা ব্যৱস্থা', subtitle: 'AI-চালিত ৰিয়েল-টাইম দুৰ্ঘটনা নিৰীক্ষণ', risk_summary: 'বিপদৰ সাৰাংশ', road_status: 'ৰাস্তা সংযোগ', village_status: 'গাঁও সংযোগ', active_alerts: 'সক্ৰিয় সতৰ্কতা', top_risk: 'চৰ্বোচ্চ বিপদ অঞ্চল', simulate: 'আপডেট চিমুলেট', language: 'ভাষা', search: 'অঞ্চল বিচাৰক...' },
+  mr: { dashboard: 'डॅशबोर्ड', zones: 'झोने', alerts: 'सूचना', roads: 'मार्ग', villages: 'गावे', reports: 'अहवाल', weather: 'हवामान', predictions: 'अंदाज', history: 'इतिहास', report_now: 'आता कळवा', title: 'उत्तर-पूर्व भूस्खलन प्रारंभिक सूचना प्रणाली', subtitle: 'AI-शक्तीवर चालणारी रिअल-टाइम आपत्ती निरीक्षण', risk_summary: 'धोका सारांश', road_status: 'मार्ग कनेक्टिव्हिटी', village_status: 'गाव कनेक्टिव्हिटी', active_alerts: 'सक्रिय सूचना', top_risk: 'सर्वाधिक धोकादायक झोने', simulate: 'अद्यतन सिम्युलेट', language: 'भाषा', search: 'झोने शोधा...' },
+  ta: { dashboard: 'டாஷ்போர்டு', zones: 'மண்டலங்கள்', alerts: 'எச்சரிக்கை', roads: 'சாலைகள்', villages: 'கிராமங்கள்', reports: 'அறிக்கைகள்', weather: 'வானிலை', predictions: 'முன்னறிவிப்பு', history: 'வரலாறு', report_now: 'இப்போது தெரிவிக்கவும்', title: 'வடகிழக்கு மண்சரிவு முன்னெச்சரிக்கை அமைப்பு', subtitle: 'AI-இயங்கும் நிகழ்நேர பேரிடர் கண்காணிப்பு', risk_summary: 'ஆபத்து சுருக்கம்', road_status: 'சாலை இணைப்பு', village_status: 'கிராம இணைப்பு', active_alerts: 'செயலில் உள்ள எச்சரிக்கை', top_risk: 'அதிக ஆபத்து மண்டலங்கள்', simulate: 'புதுப்பிப்பு சிமுலேஷன்', language: 'மொழி', search: 'மண்டலங்களைத் தேடு...' },
 };
 
 // ============ MAP COMPONENT ============
@@ -122,6 +116,64 @@ function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => { map.setView(center, 6); }, [center]);
   return null;
+}
+
+// ============ STAT CARD ============
+function StatCard({ label, value, icon, color }: { label: string; value: string | number; icon: string; color: string }) {
+  return (
+    <div style={{ background: '#1e293b', borderRadius: 12, padding: '20px 16px', border: `1px solid ${color}33`, minWidth: 160, flex: 1 }}>
+      <div style={{ fontSize: 24, marginBottom: 4 }}>{icon}</div>
+      <div style={{ fontSize: 28, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+// ============ HISTORICAL LANDSLIDES PAGE ============
+function HistoryPage() {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAPI<any>('/historical-landslides')
+      .then(d => setRecords(d.records || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const severityColors: Record<string, string> = { critical: '#ef4444', high: '#f97316', moderate: '#eab308', low: '#22c55e' };
+  const totalCasualties = records.reduce((s: number, r: any) => s + (r.casualties || 0), 0);
+  const totalDisplaced = records.reduce((s: number, r: any) => s + (r.displaced || 0), 0);
+  const totalBlocked = records.filter((r: any) => r.road_blocked).length;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', marginBottom: 16 }}>📜 Historical Landslide Records — NER Region</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Total Events</div><div style={{ fontSize: 24, fontWeight: 700, color: '#60a5fa' }}>{records.length}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Casualties</div><div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>{totalCasualties}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>People Displaced</div><div style={{ fontSize: 24, fontWeight: 700, color: '#f97316' }}>{totalDisplaced.toLocaleString()}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Roads Blocked</div><div style={{ fontSize: 24, fontWeight: 700, color: '#eab308' }}>{totalBlocked}</div></div>
+      </div>
+      <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px 100px 100px', gap: 0, padding: '10px 16px', background: '#0f172a', borderBottom: '1px solid #334155', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+          <div>Date</div><div>Zone / Description</div><div>Type</div><div>Severity</div><div>Casualties</div><div>Displaced</div>
+        </div>
+        {loading ? (
+          <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Loading records...</div>
+        ) : records.map((r: any) => (
+          <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px 100px 100px', gap: 0, padding: '12px 16px', borderBottom: '1px solid #1e293b', fontSize: 13, alignItems: 'start' }}>
+            <div style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{r.date}</div>
+            <div><div style={{ fontWeight: 600, color: '#e2e8f0' }}>{r.zone} — {r.district}, {r.state}</div><div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{r.description}</div></div>
+            <div style={{ color: '#94a3b8' }}>{r.type}</div>
+            <div><span style={{ background: `${severityColors[r.severity]}22`, color: severityColors[r.severity], padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{r.severity.toUpperCase()}</span></div>
+            <div style={{ color: r.casualties > 0 ? '#ef4444' : '#64748b', fontWeight: r.casualties > 0 ? 700 : 400 }}>{r.casualties}</div>
+            <div style={{ color: '#f97316' }}>{r.displaced.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ============ MAIN APP ============
@@ -154,8 +206,6 @@ export default function App() {
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [dataSourceStatus, setDataSourceStatus] = useState<Record<string, any>>({});
   const [syncingRealData, setSyncingRealData] = useState(false);
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const t = LANGUAGES[lang] || LANGUAGES.en;
 
@@ -165,12 +215,6 @@ export default function App() {
       setAlerts(prev => [{ id: data.alert_id, title: data.zone_name, message: data.message, risk_level: data.risk_level, status: 'active', latitude: 0, longitude: 0, created_at: data.timestamp, zone_id: 0 }, ...prev]);
     }
   });
-
-  // Toast helper
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
 
   // Load data
   const loadData = useCallback(async () => {
@@ -206,10 +250,7 @@ export default function App() {
       setPredictions(data.predictions);
       const z = await fetchAPI<Zone[]>('/zones');
       setZones(z);
-      showToast('success', 'Predictions complete. Analysis updated for all 24 zones.');
-    } catch (e) {
-      showToast('error', 'Failed to run predictions. Ensure backend is running.');
-    }
+    } catch (e) { alert('Failed to run predictions. Make sure backend is running on port 8000.'); }
     setPredicting(false);
   };
 
@@ -219,8 +260,7 @@ export default function App() {
       await postAPI('/simulate/update');
       await loadData();
       await runPredictions();
-      showToast('success', 'Simulation complete. Data and predictions refreshed.');
-    } catch (e) { showToast('error', 'Simulation failed.'); }
+    } catch (e) { console.error(e); }
     setSimulating(false);
   };
 
@@ -238,11 +278,11 @@ export default function App() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => { setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }); setLocationError(''); },
-          () => { setLocationError('Location unavailable. Using default NER coordinates.'); setUserLocation({ lat: 25.6, lon: 93.5 }); },
+          () => { setLocationError('Could not access location. Using default NER coordinates.'); setUserLocation({ lat: 25.6, lon: 93.5 }); },
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
       } else {
-        setLocationError('Geolocation not supported.');
+        setLocationError('Geolocation not supported by your browser.');
         setUserLocation({ lat: 25.6, lon: 93.5 });
       }
     }
@@ -262,7 +302,6 @@ export default function App() {
       setShowAdminLogin(false);
       setAdminPassword('');
       loadReports();
-      showToast('success', 'Admin access granted.');
     } catch (err) {
       setAdminLoginError(err instanceof Error ? err.message : 'Login failed');
     }
@@ -273,7 +312,6 @@ export default function App() {
     sessionStorage.removeItem('admin_token');
     setIsAdmin(false);
     setReports([]);
-    showToast('success', 'Admin logged out.');
   };
 
   useEffect(() => {
@@ -300,9 +338,9 @@ export default function App() {
         method: 'POST', headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
-      showToast('success', `Synced ${data.zones_updated}/${data.total_zones} zones with real data.`);
+      alert(`Synced ${data.zones_updated}/${data.total_zones} zones with real data!`);
       await loadData();
-    } catch (e) { showToast('error', 'Sync failed.'); }
+    } catch (e) { alert('Sync failed.'); }
     setSyncingRealData(false);
   };
 
@@ -330,10 +368,9 @@ export default function App() {
     reportPhotos.forEach(photo => form.append('photos', photo));
     try {
       const result = await postAPI<{ report_id: number; media_urls: string[] }>('/reports', form, true);
-      setReportStatus({ type: 'success', message: `Report #${result.report_id} submitted successfully.` });
+      setReportStatus({ type: 'success', message: `Report #${result.report_id} submitted! ${result.media_urls?.length || 0} photo(s) attached. Location: (${(userLocation?.lat || 25.6).toFixed(4)}, ${(userLocation?.lon || 93.5).toFixed(4)})` });
       setReportPhotos([]);
       setPhotoPreviewUrls([]);
-      showToast('success', 'Field report submitted with GPS location and photos.');
     } catch (err) {
       setReportStatus({ type: 'error', message: `Failed: ${err instanceof Error ? err.message : 'Unknown error'}` });
     }
@@ -344,55 +381,45 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="loading-screen">
-        <div className="loading-spinner" />
-        <div className="loading-text">Initializing monitoring systems</div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🏔️</div>
+        <div style={{ fontSize: 20, color: '#94a3b8' }}>Loading NER Early Warning System...</div>
       </div>
     );
   }
 
-  // ============ SIDEBAR NAV ITEMS ============
+  // ============ SIDEBAR ============
   const navItems = [
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
     { id: 'zones', label: t.zones, icon: MapPin },
-    { id: 'alerts', label: t.alerts, icon: AlertTriangle, badge: activeAlertCount || undefined, badgeClass: 'warning' },
+    { id: 'alerts', label: t.alerts, icon: AlertTriangle, badge: activeAlertCount || undefined },
     { id: 'roads', label: t.roads, icon: Route },
     { id: 'villages', label: t.villages, icon: Home },
     { id: 'predictions', label: t.predictions, icon: Brain },
     { id: 'history', label: t.history, icon: History },
   ];
-
-  if (isAdmin) {
-    navItems.push({ id: 'reports', label: t.reports, icon: FileText });
-  }
+  if (isAdmin) navItems.push({ id: 'reports', label: t.reports, icon: FileText });
 
   return (
     <div className="app-layout">
       {/* ============ SIDEBAR ============ */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">
-            <Mountain size={20} />
-          </div>
+          <div className="sidebar-brand-icon">🏔️</div>
           <div className="sidebar-brand-text">
             <h1>NER Early Warning</h1>
             <p>Landslide Monitoring</p>
           </div>
         </div>
-
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">Operations</div>
           {navItems.slice(0, 5).map(item => (
-            <button key={item.id} className={`sidebar-item ${page === item.id ? 'active' : ''}`}
-              onClick={() => setPage(item.id)}>
+            <button key={item.id} className={`sidebar-item ${page === item.id ? 'active' : ''}`} onClick={() => setPage(item.id)}>
               <item.icon className="sidebar-item-icon" size={18} />
               {item.label}
-              {item.badge !== undefined && (
-                <span className={`sidebar-item-badge ${item.badgeClass || ''}`}>{item.badge}</span>
-              )}
+              {item.badge !== undefined && <span className="sidebar-item-badge">{item.badge}</span>}
             </button>
           ))}
-
           <div className="sidebar-section-label">Analytics</div>
           {navItems.slice(5).map(item => (
             <button key={item.id} className={`sidebar-item ${page === item.id ? 'active' : ''}`}
@@ -402,32 +429,27 @@ export default function App() {
             </button>
           ))}
         </nav>
-
         <div className="sidebar-footer">
           <div className="sidebar-section-label" style={{ padding: '0 0 8px' }}>Data Sources</div>
           <div className="sidebar-data-sources">
             {dataSourceStatus.open_meteo_weather && (
               <span className={`data-source-pill ${dataSourceStatus.open_meteo_weather.status === 'ok' ? 'ok' : 'error'}`}>
-                <span className="data-source-dot" />
-                Rain
+                <span className="data-source-dot" /> Rain
               </span>
             )}
             {dataSourceStatus.sentinel_2_ndvi && (
               <span className={`data-source-pill ${dataSourceStatus.sentinel_2_ndvi.status === 'ok' ? 'ok' : 'error'}`}>
-                <span className="data-source-dot" />
-                NDVI
+                <span className="data-source-dot" /> NDVI
               </span>
             )}
             {dataSourceStatus.srtm_elevation && (
               <span className={`data-source-pill ${dataSourceStatus.srtm_elevation.status === 'ok' ? 'ok' : 'error'}`}>
-                <span className="data-source-dot" />
-                DEM
+                <span className="data-source-dot" /> DEM
               </span>
             )}
             {dataSourceStatus.mqtt_sensors && (
               <span className={`data-source-pill ${dataSourceStatus.mqtt_sensors.mqtt_connected ? 'ok' : 'error'}`}>
-                <span className="data-source-dot" />
-                MQTT
+                <span className="data-source-dot" /> MQTT
               </span>
             )}
           </div>
@@ -439,9 +461,7 @@ export default function App() {
         {/* Top Bar */}
         <header className="topbar">
           <div className="topbar-left">
-            <h2 className="topbar-page-title">
-              {navItems.find(n => n.id === page)?.label || page}
-            </h2>
+            <h2 className="topbar-page-title">{navItems.find(n => n.id === page)?.label || page}</h2>
           </div>
           <div className="topbar-right">
             <select className="lang-select" value={lang} onChange={e => setLang(e.target.value)}>
@@ -452,339 +472,124 @@ export default function App() {
               <option value="mr">मराठी</option>
               <option value="ta">தமிழ்</option>
             </select>
-
             <button className="btn btn-ghost btn-sm" onClick={simulateUpdate} disabled={simulating}>
-              {simulating ? <Loader2 size={14} className="animate-spin" /> : <Radio size={14} />}
-              {simulating ? 'Updating...' : t.simulate}
+              {simulating ? '⏳ Updating...' : '📡 ' + t.simulate}
             </button>
-
             {isAdmin && (
               <button className="btn btn-success btn-sm" onClick={syncRealData} disabled={syncingRealData}>
-                {syncingRealData ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                {syncingRealData ? 'Syncing...' : 'Sync Real Data'}
+                {syncingRealData ? '⏳ Syncing...' : '🌍 Sync Real Data'}
               </button>
             )}
-
             <button className="btn btn-danger btn-sm" onClick={() => setShowReportForm(true)}>
-              <Camera size={14} />
-              {t.report_now}
+              📸 {t.report_now}
             </button>
-
             {isAdmin ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="admin-badge"><Shield size={12} /> Admin</span>
-                <button className="btn btn-ghost btn-sm" onClick={handleAdminLogout}>
-                  <ShieldOff size={14} /> Logout
-                </button>
+                <span className="admin-badge">🔑 Admin</span>
+                <button className="btn btn-ghost btn-sm" onClick={handleAdminLogout}>Logout</button>
               </div>
             ) : (
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowAdminLogin(true)}>
-                <Shield size={14} /> Admin
-              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowAdminLogin(true)}>🔐 Admin Login</button>
             )}
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="page-content animate-fade-in" key={page}>
+        {/* ============ PAGE CONTENT ============ */}
+        <main style={{ padding: 20, maxWidth: 1400, margin: '0 auto' }}>
 
-          {/* ============ DASHBOARD ============ */}
+          {/* ============ DASHBOARD PAGE ============ */}
           {page === 'dashboard' && dashboard && (
             <>
-              <div className="stat-grid">
-                {[
-                  { label: 'Monitored Zones', value: dashboard.summary.total_zones, icon: MapPin, color: '#6391ff', bg: 'rgba(99,145,255,0.1)' },
-                  { label: 'Critical Zones', value: dashboard.summary.critical_zones, icon: AlertCircle, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
-                  { label: 'High Risk', value: dashboard.summary.high_risk_zones, icon: TrendingUp, color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
-                  { label: 'Active Alerts', value: dashboard.summary.active_alerts, icon: AlertTriangle, color: '#eab308', bg: 'rgba(234,179,8,0.1)' },
-                  { label: 'Avg Risk Score', value: `${dashboard.summary.avg_risk_score}%`, icon: BarChart3, color: '#a78bfa', bg: 'rgba(167,139,250,0.1)' },
-                  { label: 'Roads Blocked', value: dashboard.summary.roads_blocked, icon: Route, color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
-                  { label: 'Isolated Villages', value: dashboard.summary.isolated_villages, icon: Users, color: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
-                ].map((s, i) => (
-                  <div key={i} className="stat-card" style={{ '--stat-accent': s.color } as any}>
-                    <div className="stat-card-top">
-                      <span className="stat-card-label">{s.label}</span>
-                      <div className="stat-card-icon" style={{ background: s.bg }}>
-                        <s.icon size={18} color={s.color} />
-                      </div>
-                    </div>
-                    <div className="stat-card-value" style={{ color: s.color }}>{s.value}</div>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                <StatCard label={t.zones} value={dashboard.summary.total_zones} icon="🗺️" color="#3b82f6" />
+                <StatCard label="Critical Zones" value={dashboard.summary.critical_zones} icon="🔴" color="#ef4444" />
+                <StatCard label="High Risk" value={dashboard.summary.high_risk_zones} icon="🟠" color="#f97316" />
+                <StatCard label={t.active_alerts} value={dashboard.summary.active_alerts} icon="🚨" color="#eab308" />
+                <StatCard label="Avg Risk Score" value={`${dashboard.summary.avg_risk_score}%`} icon="📊" color="#a855f7" />
+                <StatCard label="Roads Blocked" value={dashboard.summary.roads_blocked} icon="🚧" color="#f97316" />
+                <StatCard label="Isolated Villages" value={dashboard.summary.isolated_villages} icon="🏘️" color="#ef4444" />
               </div>
 
-              <div className="grid-2 mb-5">
-                <div className="card">
-                  <div className="card-header">
-                    <div>
-                      <div className="card-title"><MapIcon size={16} className="card-title-icon" /> GIS Risk Map</div>
-                      <div className="card-subtitle">Interactive monitoring zones across NER</div>
-                    </div>
-                  </div>
-                  <div className="map-wrapper" style={{ height: 380 }}>
-                    <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-                      {zones.map(z => (
-                        <CircleMarker key={z.id} center={[z.latitude, z.longitude]} radius={Math.max(6, z.risk_score / 8)}
-                          fillColor={riskColor[z.risk_level]} color={riskColor[z.risk_level]} weight={2} fillOpacity={0.75}
-                          eventHandlers={{ click: () => { setSelectedZone(z); loadWeather(z.id); } }}>
-                          <Popup><div style={{ fontFamily: 'Inter, sans-serif', color: '#1e293b' }}><strong>{z.name}</strong><br />{z.district}, {z.state}<br />Risk: <strong style={{ color: riskColor[z.risk_level] }}>{z.risk_level.toUpperCase()}</strong> ({z.risk_score}%)</div></Popup>
-                        </CircleMarker>
-                      ))}
-                    </MapContainer>
-                  </div>
-                </div>
-
-                <div className="card">
-                  <div className="card-header">
-                    <div>
-                      <div className="card-title"><BarChart3 size={16} className="card-title-icon" /> {t.risk_summary}</div>
-                      <div className="card-subtitle">Zone distribution by risk classification</div>
-                    </div>
-                  </div>
-                  <div className="chart-container">
-                    <ResponsiveContainer width="100%" height={170}>
-                      <BarChart data={Object.entries(dashboard.risk_distribution).map(([k, v]) => ({ name: k, count: v }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ background: '#1a2234', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                          {Object.entries(dashboard.risk_distribution).map(([key]) => (
-                            <Cell key={key} fill={riskColor[key]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="card-header" style={{ borderBottom: 'none', paddingTop: 4 }}>
-                    <div className="card-title" style={{ fontSize: 12 }}><Activity size={14} className="card-title-icon" /> {t.road_status}</div>
-                  </div>
-                  <div className="chart-container" style={{ paddingTop: 0 }}>
-                    <ResponsiveContainer width="100%" height={140}>
-                      <PieChart>
-                        <Pie data={Object.entries(dashboard.road_status).map(([k, v]) => ({ name: k, value: v }))}
-                          cx="50%" cy="50%" outerRadius={55} innerRadius={30} dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}>
-                          {Object.entries(dashboard.road_status).map(([key]) => (
-                            <Cell key={key} fill={roadColors[key] || '#64748b'} />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ background: '#1a2234', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid-2">
-                <div className="card">
-                  <div className="card-header">
-                    <div className="card-title"><AlertTriangle size={16} className="card-title-icon" /> {t.top_risk}</div>
-                  </div>
-                  <div className="card-body" style={{ padding: '8px 20px 16px' }}>
-                    {(dashboard.top_risk_zones || []).length === 0 && (
-                      <div className="empty-state" style={{ padding: '24px 0' }}>
-                        <p className="empty-state-desc">Run predictions to identify top risk zones</p>
-                      </div>
-                    )}
-                    {(dashboard.top_risk_zones || []).slice(0, 6).map((z: any, i: number) => (
-                      <div key={z.id || i} className="zone-item"
-                        onClick={() => { if (z?.latitude && z?.longitude) { setSelectedZone(z); setPage('zones'); } }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{z.name || z.zone_name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{z.district}</div>
-                        </div>
-                        <div className="risk-bar-container" style={{ width: 160 }}>
-                          <div className="risk-bar">
-                            <div className="risk-bar-fill" style={{ width: `${Math.min(100, z.risk_score || 0)}%`, background: riskColor[z.risk_level] }} />
-                          </div>
-                          <span className="risk-bar-value" style={{ color: riskColor[z.risk_level] }}>{z.risk_score || 0}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="card">
-                  <div className="card-header">
-                    <div className="card-title"><AlertCircle size={16} className="card-title-icon" /> {t.active_alerts}</div>
-                  </div>
-                  <div className="card-body" style={{ padding: '8px 20px 16px', maxHeight: 360, overflowY: 'auto' }}>
-                    {alerts.filter(a => a.status === 'active').length === 0 && (
-                      <div className="empty-state" style={{ padding: '24px 0' }}>
-                        <CheckCircle2 size={32} style={{ color: 'var(--status-success)', margin: '0 auto 8px', opacity: 0.5 }} />
-                        <p className="empty-state-desc">No active alerts. System operating normally.</p>
-                      </div>
-                    )}
-                    {alerts.filter(a => a.status === 'active').slice(0, 6).map(a => (
-                      <div key={a.id} className={`alert-card ${a.risk_level}`} style={{ marginBottom: 8 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <span className={`badge ${badgeClass[a.risk_level]}`}>{a.risk_level.toUpperCase()}</span>
-                          <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{a.created_at ? new Date(a.created_at).toLocaleString() : ''}</span>
-                        </div>
-                        <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{a.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ============ ZONES ============ */}
-          {page === 'zones' && (
-            <>
-              <div className="card mb-5">
-                <div className="map-wrapper" style={{ height: 340 }}>
-                  <MapContainer center={centerPos} zoom={selectedZone ? 10 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 400 }}>
+                  <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-                    <MapUpdater center={centerPos} />
                     {zones.map(z => (
-                      <CircleMarker key={z.id} center={[z.latitude, z.longitude]} radius={Math.max(6, z.risk_score / 7)}
-                        fillColor={riskColor[z.risk_level]} color={riskColor[z.risk_level]} weight={2} fillOpacity={0.75}
+                      <CircleMarker key={z.id} center={[z.latitude, z.longitude]} radius={Math.max(6, z.risk_score / 8)}
+                        fillColor={riskColor[z.risk_level]} color={riskColor[z.risk_level]} weight={2} fillOpacity={0.7}
                         eventHandlers={{ click: () => { setSelectedZone(z); loadWeather(z.id); } }}>
-                        <Popup><div style={{ fontFamily: 'Inter, sans-serif', color: '#1e293b' }}><strong>{z.name}</strong><br />Risk: {z.risk_level} ({z.risk_score}%)</div></Popup>
+                        <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{z.name}</strong><br />{z.district}, {z.state}<br />Risk: <strong style={{ color: riskColor[z.risk_level] }}>{z.risk_level.toUpperCase()}</strong> ({z.risk_score}%)<br />Elevation: {z.elevation_m}m | Slope: {z.slope_angle_deg}°</div></Popup>
                       </CircleMarker>
                     ))}
                   </MapContainer>
                 </div>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: selectedZone ? '1fr 1fr' : '1fr', gap: 18 }}>
-                {selectedZone && (
-                  <div className="card">
-                    <div className="card-header">
-                      <div className="card-title"><MapPin size={16} className="card-title-icon" /> {selectedZone.name}</div>
-                      <span className={`badge ${badgeClass[selectedZone.risk_level]}`}>{selectedZone.risk_level.toUpperCase()}</span>
-                    </div>
-                    <div className="card-body">
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                        {[
-                          ['District', selectedZone.district],
-                          ['State', selectedZone.state],
-                          ['Elevation', `${selectedZone.elevation_m}m`],
-                          ['Slope', `${selectedZone.slope_angle_deg}°`],
-                          ['Soil Type', selectedZone.soil_type],
-                          ['Vegetation', `${(selectedZone.vegetation_cover * 100).toFixed(0)}%`],
-                          ['Sensors', `${selectedZone.sensor_count}`],
-                          ['Active Alerts', `${selectedZone.active_alerts}`],
-                        ].map(([label, val]) => (
-                          <div key={label} style={{ fontSize: 12.5 }}>
-                            <span style={{ color: 'var(--text-tertiary)' }}>{label}:</span>{' '}
-                            <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{val}</span>
-                          </div>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                  <h3 style={{ fontSize: 15, marginBottom: 16, color: '#e2e8f0' }}>{t.risk_summary}</h3>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <BarChart data={Object.entries(dashboard.risk_distribution).map(([k, v]) => ({ name: k, count: v, fill: riskColor[k] }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                      <YAxis tick={{ fill: '#94a3b8' }} />
+                      <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8 }} />
+                      <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                        {Object.entries(dashboard.risk_distribution).map(([key]) => (
+                          <Cell key={key} fill={riskColor[key]} />
                         ))}
-                      </div>
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 5 }}>
-                          <span style={{ color: 'var(--text-tertiary)' }}>Risk Score</span>
-                          <span style={{ fontWeight: 600, color: riskColor[selectedZone.risk_level] }}>{selectedZone.risk_score}/100</span>
-                        </div>
-                        <div className="risk-bar" style={{ height: 8 }}>
-                          <div className="risk-bar-fill" style={{ width: `${selectedZone.risk_score}%`, background: `linear-gradient(90deg, var(--status-success), ${riskColor[selectedZone.risk_level]})` }} />
-                        </div>
-                      </div>
-                      {weather && selectedZoneId === selectedZone.id && (
-                        <div style={{ marginTop: 16, padding: 14, background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-blue)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <CloudRain size={14} /> Current Weather
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                            {([
-                              [Droplets, 'Rainfall', `${weather.current.rainfall_mm} mm`, '#3b82f6'],
-                              [Thermometer, 'Temp', `${weather.current.temperature_c}°C`, '#f97316'],
-                              [Waves, 'Humidity', `${weather.current.humidity_pct}%`, '#06b6d4'],
-                              [Wind, 'Wind', `${weather.current.wind_speed_kmh} km/h`, '#8b5cf6'],
-                            ] as any[]).map(([Icon, label, val, color]: [any, string, string, string]) => (
-                              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                                <Icon size={13} style={{ color }} />
-                                <span style={{ color: 'var(--text-tertiary)' }}>{label}:</span>
-                                <span style={{ fontWeight: 500 }}>{val}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {weather.current.storm_active && (
-                            <div style={{ marginTop: 10, padding: '6px 10px', background: 'var(--risk-critical-bg)', borderRadius: 'var(--radius-sm)', fontSize: 11, color: 'var(--risk-critical)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <AlertCircle size={12} /> Active storm system detected
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
 
-                <div className="card">
-                  <div className="card-header">
-                    <div className="card-title"><MapPin size={16} className="card-title-icon" /> All Zones ({zones.length})</div>
-                  </div>
-                  <div className="card-body" style={{ padding: '8px 12px', maxHeight: 560, overflowY: 'auto' }}>
-                    {[...zones].sort((a, b) => b.risk_score - a.risk_score).map(z => (
-                      <div key={z.id} className={`zone-item ${selectedZone?.id === z.id ? 'selected' : ''}`}
-                        onClick={() => { setSelectedZone(z); loadWeather(z.id); }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{z.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{z.district}, {z.state}</div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: riskColor[z.risk_level], fontVariantNumeric: 'tabular-nums' }}>{z.risk_score}%</div>
-                          <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{z.risk_level}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <h3 style={{ fontSize: 15, marginBottom: 12, marginTop: 20, color: '#e2e8f0' }}>{t.road_status}</h3>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie data={Object.entries(dashboard.road_status).map(([k, v]) => ({ name: k, value: v }))}
+                        cx="50%" cy="50%" outerRadius={60} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                        {Object.entries(dashboard.road_status).map(([key]) => (
+                          <Cell key={key} fill={roadColors[key] || '#64748b'} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            </>
-          )}
 
-          {/* ============ ALERTS ============ */}
-          {page === 'alerts' && (
-            <>
-              <div className="page-header">
-                <div>
-                  <div className="page-title">Alerts & Notifications</div>
-                  <div className="page-subtitle">Real-time monitoring alerts and SMS broadcast history</div>
-                </div>
-              </div>
-              <div className="grid-2">
-                <div className="card">
-                  <div className="map-wrapper" style={{ height: 380 }}>
-                    <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      {alerts.filter(a => a.status === 'active' && a.latitude && a.longitude).map(a => (
-                        <CircleMarker key={a.id} center={[a.latitude, a.longitude]} radius={10}
-                          fillColor={riskColor[a.risk_level]} color={riskColor[a.risk_level]} weight={3} fillOpacity={0.8}>
-                          <Popup><div style={{ fontFamily: 'Inter, sans-serif', color: '#1e293b' }}><strong>{a.title}</strong><br />{a.message}</div></Popup>
-                        </CircleMarker>
-                      ))}
-                    </MapContainer>
-                  </div>
-                </div>
-                <div style={{ maxHeight: 460, overflowY: 'auto' }}>
-                  {alerts.length === 0 && (
-                    <div className="empty-state">
-                      <AlertTriangle size={40} style={{ color: 'var(--text-disabled)', margin: '0 auto 12px' }} />
-                      <p className="empty-state-title">No alerts yet</p>
-                      <p className="empty-state-desc">Run predictions to generate alerts for high-risk zones</p>
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                  <h3 style={{ fontSize: 15, marginBottom: 12, color: '#e2e8f0' }}>⚠️ {t.top_risk}</h3>
+                  {(dashboard.top_risk_zones || []).length === 0 && (
+                    <p style={{ color: '#64748b', fontSize: 13 }}>Run predictions to see top risk zones.</p>
                   )}
-                  {alerts.map(a => (
-                    <div key={a.id} className={`alert-card ${a.risk_level}`} style={{ marginBottom: 8 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <span className={`badge ${badgeClass[a.risk_level]}`}>{a.risk_level.toUpperCase()}</span>
-                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{a.status} | {a.created_at ? new Date(a.created_at).toLocaleString() : ''}</span>
+                  {(dashboard.top_risk_zones || []).slice(0, 8).map((z: any) => (
+                    <div key={z.id || z.zone_id || Math.random()} onClick={() => { if (z && z.latitude && z.longitude) { setSelectedZone(z); setPage('zones'); } }}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #334155', cursor: 'pointer' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{z.name || z.zone_name || 'Zone'}</div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>{z.district || ''}</div>
                       </div>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', marginBottom: 4 }}>{a.title}</div>
-                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 6 }}>{a.message}</p>
-                      {a.channels && a.channels.length > 0 && (
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          {a.channels.map((ch: string) => (
-                            <span key={ch} className="badge badge-outline" style={{ fontSize: 10 }}>{ch}</span>
-                          ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 80, height: 6, background: '#334155', borderRadius: 3, overflow: 'hidden' }}>
+                          <div style={{ width: `${Math.min(100, Math.max(0, z.risk_score || 0))}%`, height: '100%', background: riskColor[z.risk_level] || '#64748b', borderRadius: 3 }} />
                         </div>
-                      )}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: riskColor[z.risk_level] || '#64748b' }}>{z.risk_score || 0}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                  <h3 style={{ fontSize: 15, marginBottom: 12, color: '#e2e8f0' }}>🚨 {t.active_alerts}</h3>
+                  {alerts.filter(a => a.status === 'active').length === 0 && (
+                    <p style={{ color: '#64748b', fontSize: 14 }}>No active alerts. System operating normally.</p>
+                  )}
+                  {alerts.filter(a => a.status === 'active').slice(0, 8).map(a => (
+                    <div key={a.id} style={{ padding: '10px 12px', marginBottom: 8, borderRadius: 8, background: riskBg[a.risk_level], border: `1px solid ${riskColor[a.risk_level]}44` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 600, fontSize: 13, color: riskColor[a.risk_level] }}>{a.risk_level.toUpperCase()}</span>
+                        <span style={{ fontSize: 11, color: '#64748b' }}>{a.created_at ? new Date(a.created_at).toLocaleString() : ''}</span>
+                      </div>
+                      <p style={{ fontSize: 13, marginTop: 4, color: '#cbd5e1' }}>{a.message}</p>
                     </div>
                   ))}
                 </div>
@@ -792,582 +597,565 @@ export default function App() {
             </>
           )}
 
-          {/* ============ ROADS ============ */}
-          {page === 'roads' && (
+          {/* ============ ZONES PAGE ============ */}
+          {page === 'zones' && (
             <>
-              <div className="page-header">
-                <div>
-                  <div className="page-title">Road Connectivity Status</div>
-                  <div className="page-subtitle">Major highway and road monitoring across NER</div>
+              <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 350, marginBottom: 20 }}>
+                <MapContainer center={centerPos} zoom={selectedZone ? 10 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OSM" />
+                  <MapUpdater center={centerPos} />
+                  {zones.map(z => (
+                    <CircleMarker key={z.id} center={[z.latitude, z.longitude]} radius={Math.max(6, z.risk_score / 7)}
+                      fillColor={riskColor[z.risk_level]} color={riskColor[z.risk_level]} weight={2} fillOpacity={0.7}
+                      eventHandlers={{ click: () => { setSelectedZone(z); loadWeather(z.id); } }}>
+                      <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{z.name}</strong><br />Risk: {z.risk_level} ({z.risk_score}%)</div></Popup>
+                    </CircleMarker>
+                  ))}
+                </MapContainer>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: selectedZone ? '1fr 1fr' : '1fr', gap: 20 }}>
+                {selectedZone && (
+                  <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                    <h3 style={{ fontSize: 16, marginBottom: 12, color: '#f1f5f9' }}>📍 {selectedZone.name}</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
+                      <div><span style={{ color: '#64748b' }}>District:</span> {selectedZone.district}</div>
+                      <div><span style={{ color: '#64748b' }}>State:</span> {selectedZone.state}</div>
+                      <div><span style={{ color: '#64748b' }}>Elevation:</span> {selectedZone.elevation_m}m</div>
+                      <div><span style={{ color: '#64748b' }}>Slope:</span> {selectedZone.slope_angle_deg}°</div>
+                      <div><span style={{ color: '#64748b' }}>Soil:</span> {selectedZone.soil_type}</div>
+                      <div><span style={{ color: '#64748b' }}>Vegetation:</span> {(selectedZone.vegetation_cover * 100).toFixed(0)}%</div>
+                      <div><span style={{ color: '#64748b' }}>Risk Level:</span> <strong style={{ color: riskColor[selectedZone.risk_level] }}>{selectedZone.risk_level.toUpperCase()}</strong></div>
+                      <div><span style={{ color: '#64748b' }}>Risk Score:</span> <strong style={{ color: riskColor[selectedZone.risk_level] }}>{selectedZone.risk_score}%</strong></div>
+                    </div>
+                    <div style={{ marginTop: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                        <span>Risk Score</span><span>{selectedZone.risk_score}/100</span>
+                      </div>
+                      <div style={{ width: '100%', height: 12, background: '#334155', borderRadius: 6, overflow: 'hidden' }}>
+                        <div style={{ width: `${selectedZone.risk_score}%`, height: '100%', background: `linear-gradient(90deg, #22c55e, ${riskColor[selectedZone.risk_level]})`, borderRadius: 6, transition: 'width 0.5s' }} />
+                      </div>
+                    </div>
+                    {weather && selectedZoneId === selectedZone.id && (
+                      <div style={{ marginTop: 16, padding: 12, background: '#0f172a', borderRadius: 8 }}>
+                        <h4 style={{ fontSize: 13, color: '#60a5fa', marginBottom: 8 }}>🌤️ Current Weather</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
+                          <div>🌧️ Rainfall: {weather.current.rainfall_mm} mm</div>
+                          <div>🌡️ Temp: {weather.current.temperature_c}°C</div>
+                          <div>💧 Humidity: {weather.current.humidity_pct}%</div>
+                          <div>💨 Wind: {weather.current.wind_speed_kmh} km/h</div>
+                        </div>
+                        {weather.current.storm_active && (
+                          <div style={{ marginTop: 8, padding: 6, background: '#ef444433', borderRadius: 4, fontSize: 12, color: '#fca5a5' }}>⛈️ Active storm system detected</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20, maxHeight: 600, overflowY: 'auto' }}>
+                  <h3 style={{ fontSize: 15, marginBottom: 12, color: '#e2e8f0' }}>🗺️ All Monitored Zones ({zones.length})</h3>
+                  {zones.sort((a, b) => b.risk_score - a.risk_score).map(z => (
+                    <div key={z.id} onClick={() => { setSelectedZone(z); loadWeather(z.id); }}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', marginBottom: 6, borderRadius: 8, background: selectedZone?.id === z.id ? '#334155' : '#0f172a', cursor: 'pointer', border: `1px solid ${selectedZone?.id === z.id ? riskColor[z.risk_level] : '#1e293b'}` }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{z.name}</div>
+                        <div style={{ fontSize: 11, color: '#64748b' }}>{z.district}, {z.state}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: riskColor[z.risk_level] }}>{z.risk_score}%</div>
+                        <div style={{ fontSize: 10, color: '#64748b' }}>{z.risk_level}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="grid-2">
-                <div className="card">
-                  <div className="map-wrapper" style={{ height: 420 }}>
-                    <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      {roads.map(r => (
-                        <CircleMarker key={r.id} center={[r.latitude, r.longitude]} radius={8}
-                          fillColor={roadColors[r.status]} color={roadColors[r.status]} weight={2} fillOpacity={0.8}>
-                          <Popup><div style={{ fontFamily: 'Inter, sans-serif', color: '#1e293b' }}><strong>{r.name}</strong><br />Status: {r.status}<br />{r.from_place} → {r.to_place}</div></Popup>
-                        </CircleMarker>
-                      ))}
-                    </MapContainer>
-                  </div>
+            </>
+          )}
+
+          {/* ============ ALERTS PAGE ============ */}
+          {page === 'alerts' && (
+            <div>
+              <h2 style={{ fontSize: 18, marginBottom: 16, color: '#f1f5f9' }}>🚨 Alerts & Notifications</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 400 }}>
+                  <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    {alerts.filter(a => a.status === 'active' && a.latitude && a.longitude).map(a => (
+                      <CircleMarker key={a.id} center={[a.latitude, a.longitude]} radius={10}
+                        fillColor={riskColor[a.risk_level]} color={riskColor[a.risk_level]} weight={3} fillOpacity={0.8}>
+                        <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{a.title}</strong><br />{a.message}</div></Popup>
+                      </CircleMarker>
+                    ))}
+                  </MapContainer>
+                </div>
+                <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+                  {alerts.length === 0 && <p style={{ color: '#64748b' }}>No alerts yet. Run predictions to generate alerts.</p>}
+                  {alerts.map(a => (
+                    <div key={a.id} style={{ padding: 16, marginBottom: 10, borderRadius: 10, background: riskBg[a.risk_level], border: `1px solid ${riskColor[a.risk_level]}44` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 700, color: riskColor[a.risk_level], fontSize: 14 }}>{a.risk_level.toUpperCase()}</span>
+                        <span style={{ fontSize: 11, color: '#64748b' }}>{a.status} | {a.created_at ? new Date(a.created_at).toLocaleString() : ''}</span>
+                      </div>
+                      <p style={{ fontSize: 14, marginTop: 8, color: '#e2e8f0' }}>{a.title}</p>
+                      <p style={{ fontSize: 13, marginTop: 4, color: '#94a3b8' }}>{a.message}</p>
+                      <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {(a.channels || []).map((ch: string) => (
+                          <span key={ch} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#334155', color: '#94a3b8' }}>{ch}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============ ROADS PAGE ============ */}
+          {page === 'roads' && (
+            <div>
+              <h2 style={{ fontSize: 18, marginBottom: 16, color: '#f1f5f9' }}>🛣️ Road Connectivity Status</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 450 }}>
+                  <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    {roads.map(r => (
+                      <CircleMarker key={r.id} center={[r.latitude, r.longitude]} radius={8}
+                        fillColor={roadColors[r.status]} color={roadColors[r.status]} weight={2} fillOpacity={0.8}>
+                        <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{r.name}</strong><br />Status: {r.status}<br />{r.from_place} → {r.to_place}</div></Popup>
+                      </CircleMarker>
+                    ))}
+                  </MapContainer>
                 </div>
                 <div>
-                  <div className="card mb-4">
-                    <div className="card-header">
-                      <div className="card-title"><BarChart3 size={16} className="card-title-icon" /> Status Overview</div>
-                    </div>
-                    <div className="chart-container">
-                      <ResponsiveContainer width="100%" height={140}>
-                        <BarChart data={roads.reduce((acc: any[], r) => { const ex = acc.find(a => a.name === r.status); if (ex) ex.count++; else acc.push({ name: r.status, count: 1 }); return acc; }, [])}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                          <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fill: '#64748b' }} axisLine={false} tickLine={false} />
-                          <Tooltip contentStyle={{ background: '#1a2234', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                          <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                            {roads.reduce((acc: any[], r) => { if (!acc.find(a => a.name === r.status)) acc.push({ name: r.status }); return acc; }, []).map((r: any) => (
-                              <Cell key={r.name} fill={roadColors[r.name] || '#64748b'} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                  <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20, marginBottom: 20 }}>
+                    <h3 style={{ fontSize: 15, marginBottom: 12 }}>📊 Status Overview</h3>
+                    <ResponsiveContainer width="100%" height={150}>
+                      <BarChart data={roads.reduce((acc: any[], r) => { const ex = acc.find(a => a.name === r.status); if (ex) ex.count++; else acc.push({ name: r.status, count: 1 }); return acc; }, [])}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <YAxis tick={{ fill: '#94a3b8' }} />
+                        <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8 }} />
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                          {roads.reduce((acc: any[], r) => { if (!acc.find(a => a.name === r.status)) acc.push({ name: r.status }); return acc; }, []).map((r: any) => (
+                            <Cell key={r.name} fill={roadColors[r.name] || '#64748b'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="card">
-                    <div className="card-header">
-                      <div className="card-title"><Route size={16} className="card-title-icon" /> All Roads ({roads.length})</div>
-                    </div>
-                    <div className="card-body" style={{ padding: '8px 12px', maxHeight: 300, overflowY: 'auto' }}>
-                      {roads.map(r => (
-                        <div key={r.id} className="zone-item">
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{r.from_place} → {r.to_place}</div>
-                          </div>
-                          <span className={`badge ${r.status === 'open' ? 'badge-low' : r.status === 'blocked' ? 'badge-critical' : r.status === 'partial' ? 'badge-moderate' : 'badge-high'}`}>
-                            {r.status}
+                  <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                    <h3 style={{ fontSize: 15, marginBottom: 12 }}>🛤️ All Roads ({roads.length})</h3>
+                    {roads.map(r => (
+                      <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #334155' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
+                          <div style={{ fontSize: 11, color: '#64748b' }}>{r.from_place} → {r.to_place}</div>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: `${roadColors[r.status]}22`, color: roadColors[r.status], border: `1px solid ${roadColors[r.status]}44` }}>
+                          {r.status === 'open' ? '✅' : r.status === 'blocked' ? '🚫' : r.status === 'partial' ? '⚠️' : '🔨'} {r.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============ VILLAGES PAGE ============ */}
+          {page === 'villages' && (
+            <div>
+              <h2 style={{ fontSize: 18, marginBottom: 16, color: '#f1f5f9' }}>🏘️ Village Monitoring</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 450 }}>
+                  <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    {villages.map(v => (
+                      <CircleMarker key={v.id} center={[v.latitude, v.longitude]} radius={Math.max(5, v.population / 10000)}
+                        fillColor={v.connectivity_status === 'connected' ? '#22c55e' : v.connectivity_status === 'partially_isolated' ? '#eab308' : '#ef4444'}
+                        color={v.connectivity_status === 'connected' ? '#22c55e' : v.connectivity_status === 'partially_isolated' ? '#eab308' : '#ef4444'}
+                        weight={2} fillOpacity={0.7}>
+                        <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{v.name}</strong><br />{v.district}, {v.state}<br />Population: {v.population.toLocaleString()}<br />Status: {v.connectivity_status}</div></Popup>
+                      </CircleMarker>
+                    ))}
+                  </MapContainer>
+                </div>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20, maxHeight: 500, overflowY: 'auto' }}>
+                  <h3 style={{ fontSize: 15, marginBottom: 12 }}>🏘️ Villages ({villages.length})</h3>
+                  {villages.map(v => (
+                    <div key={v.id} style={{ padding: '10px 12px', marginBottom: 6, borderRadius: 8, background: '#0f172a', border: `1px solid ${v.connectivity_status === 'connected' ? '#22c55e33' : v.connectivity_status === 'partially_isolated' ? '#eab30833' : '#ef444433'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{v.name}</div>
+                          <div style={{ fontSize: 11, color: '#64748b' }}>{v.district}, {v.state}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: 12, color: '#94a3b8' }}>Pop: {v.population.toLocaleString()}</div>
+                          <span style={{ fontSize: 11, color: v.connectivity_status === 'connected' ? '#22c55e' : v.connectivity_status === 'partially_isolated' ? '#eab308' : '#ef4444' }}>
+                            {v.connectivity_status === 'connected' ? '🟢 Connected' : v.connectivity_status === 'partially_isolated' ? '🟡 Partial' : '🔴 Isolated'}
                           </span>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </>
+            </div>
           )}
 
-          {/* ============ VILLAGES ============ */}
-          {page === 'villages' && (
-            <>
-              <div className="page-header">
-                <div>
-                  <div className="page-title">Village Monitoring</div>
-                  <div className="page-subtitle">Connectivity status and population tracking for vulnerable communities</div>
-                </div>
+          {/* ============ REPORTS PAGE (Admin) ============ */}
+          {page === 'reports' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: 18, color: '#f1f5f9' }}>🔒 Admin — Field Reports ({reports.length})</h2>
               </div>
-              <div className="grid-2">
-                <div className="card">
-                  <div className="map-wrapper" style={{ height: 420 }}>
-                    <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      {villages.map(v => (
-                        <CircleMarker key={v.id} center={[v.latitude, v.longitude]} radius={Math.max(5, v.population / 10000)}
-                          fillColor={v.connectivity_status === 'connected' ? '#22c55e' : v.connectivity_status === 'partially_isolated' ? '#eab308' : '#ef4444'}
-                          color={v.connectivity_status === 'connected' ? '#22c55e' : v.connectivity_status === 'partially_isolated' ? '#eab308' : '#ef4444'}
-                          weight={2} fillOpacity={0.7}>
-                          <Popup><div style={{ fontFamily: 'Inter, sans-serif', color: '#1e293b' }}><strong>{v.name}</strong><br />{v.district}, {v.state}<br />Pop: {v.population.toLocaleString()}<br />Status: {v.connectivity_status}</div></Popup>
-                        </CircleMarker>
-                      ))}
-                    </MapContainer>
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 400 }}>
+                  <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    {reports.map(r => (
+                      <CircleMarker key={r.id} center={[r.latitude, r.longitude]} radius={8}
+                        fillColor={r.severity_claimed === 'critical' ? '#ef4444' : r.severity_claimed === 'high' ? '#f97316' : '#eab308'}
+                        color="#fff" weight={2} fillOpacity={0.8}>
+                        <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{r.report_type}</strong><br />{r.description}<br />By: {r.reporter_name}{r.media_urls && r.media_urls.length > 0 && <><br />📷 {r.media_urls.length} photo(s)</>}</div></Popup>
+                      </CircleMarker>
+                    ))}
+                  </MapContainer>
                 </div>
-                <div className="card">
-                  <div className="card-header">
-                    <div className="card-title"><Home size={16} className="card-title-icon" /> Villages ({villages.length})</div>
-                  </div>
-                  <div className="card-body" style={{ padding: '8px 12px', maxHeight: 460, overflowY: 'auto' }}>
-                    {villages.map(v => {
-                      const statusColor = v.connectivity_status === 'connected' ? 'var(--status-success)' : v.connectivity_status === 'partially_isolated' ? 'var(--status-warning)' : 'var(--status-error)';
-                      return (
-                        <div key={v.id} className="zone-item" style={{ borderLeft: `3px solid ${statusColor}` }}>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{v.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{v.district}, {v.state}</div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>Pop: {v.population.toLocaleString()}</div>
-                            <span className={`badge ${v.connectivity_status === 'connected' ? 'badge-low' : v.connectivity_status === 'partially_isolated' ? 'badge-moderate' : 'badge-critical'}`} style={{ fontSize: 10, marginTop: 2 }}>
-                              {v.connectivity_status === 'connected' ? 'Connected' : v.connectivity_status === 'partially_isolated' ? 'Partial' : 'Isolated'}
-                            </span>
-                          </div>
+                <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+                  {reports.length === 0 && <p style={{ color: '#64748b', padding: 20 }}>No reports found.</p>}
+                  {reports.map(r => (
+                    <div key={r.id} style={{ padding: 16, marginBottom: 10, borderRadius: 10, background: '#0f172a', border: `1px solid ${r.verified ? '#22c55e44' : '#334155'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>📋 {r.report_type.replace('_', ' ')}</span>
+                        <span style={{ fontSize: 11, color: '#64748b' }}>{r.created_at ? new Date(r.created_at).toLocaleString() : ''}</span>
+                      </div>
+                      <p style={{ fontSize: 13, marginTop: 8, color: '#cbd5e1' }}>{r.description}</p>
+                      <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 12, color: '#64748b' }}>
+                        <span>👤 {r.reporter_name}</span>
+                        <span>⚠️ {r.severity_claimed}</span>
+                        {r.verified && <span style={{ color: '#22c55e' }}>✅ Verified</span>}
+                      </div>
+                      {r.media_urls && r.media_urls.length > 0 && (
+                        <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {r.media_urls.map((url: string, i: number) => (
+                            <img key={i} src={url} alt={`Report photo ${i + 1}`} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '2px solid #334155', cursor: 'pointer' }} onClick={() => window.open(url, '_blank')} />
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
+                      )}
+                      {!r.verified && (
+                        <button onClick={async () => {
+                          const token = getAuthToken();
+                          if (!token) return;
+                          try { await fetch(`${API_BASE}/reports/${r.id}/verify`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); loadReports(); } catch (e) { console.error(e); }
+                        }} style={{ marginTop: 8, padding: '4px 12px', borderRadius: 4, border: '1px solid #22c55e44', background: 'rgba(34,197,94,0.1)', color: '#22c55e', fontSize: 12, cursor: 'pointer' }}>
+                          ✅ Verify Report
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-            </>
+            </div>
           )}
 
-          {/* ============ PREDICTIONS ============ */}
+          {/* ============ PREDICTIONS PAGE ============ */}
           {page === 'predictions' && (
-            <>
-              <div className="page-header">
-                <div>
-                  <div className="page-title">AI/ML Risk Analysis</div>
-                  <div className="page-subtitle">Multi-factor predictive modeling for all 24 monitored zones</div>
-                </div>
-                <button className="btn btn-purple" onClick={runPredictions} disabled={predicting}>
-                  {predicting ? <Loader2 size={16} className="animate-spin" /> : <Brain size={16} />}
-                  {predicting ? 'Analyzing...' : 'Run Predictions'}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h2 style={{ fontSize: 18, color: '#f1f5f9' }}>🤖 AI/ML Predictions — Live Risk Analysis</h2>
+                <button onClick={runPredictions} disabled={predicting} style={{ background: predicting ? '#475569' : '#7c3aed', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, cursor: predicting ? 'wait' : 'pointer' }}>
+                  {predicting ? '⏳ Analyzing...' : '🧠 Run Predictions'}
                 </button>
               </div>
 
               {predicting && (
-                <div className="card mb-5" style={{ textAlign: 'center', padding: 40 }}>
-                  <div className="loading-spinner" style={{ margin: '0 auto 16px', borderColor: 'rgba(167,139,250,0.2)', borderTopColor: 'var(--accent-purple)' }} />
-                  <p style={{ color: 'var(--accent-purple)', fontSize: 14, fontWeight: 500 }}>Running AI/ML risk analysis on all 24 zones</p>
-                  <p style={{ color: 'var(--text-tertiary)', fontSize: 12, marginTop: 4 }}>Analyzing rainfall, slope, soil, sensors, vegetation & historical data</p>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #7c3aed44', padding: 30, textAlign: 'center', marginBottom: 20 }}>
+                  <div style={{ fontSize: 40, marginBottom: 8 }}>🧠</div>
+                  <p style={{ color: '#a855f7', fontSize: 14 }}>Running AI/ML risk analysis on all 24 zones...</p>
+                  <p style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>Analyzing rainfall, slope, soil, sensors, vegetation & historical data</p>
                 </div>
               )}
 
               {predictions.length > 0 && (
                 <>
-                  <div className="grid-2 mb-5">
-                    <div className="card">
-                      <div className="card-header">
-                        <div>
-                          <div className="card-title"><TrendingUp size={16} className="card-title-icon" /> Slope Angle vs Risk Score</div>
-                          <div className="card-subtitle">Zone-wise terrain slope compared to calculated risk</div>
-                        </div>
-                      </div>
-                      <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={280}>
-                          <BarChart data={predictions.map(p => {
-                            const zone = zones.find(z => z.id === p.zone_id);
-                            return { name: p.zone_name.substring(0, 10), slope: zone?.slope_angle_deg || 0, risk: p.risk_score };
-                          })}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 9 }} angle={-45} textAnchor="end" height={60} axisLine={false} tickLine={false} />
-                            <YAxis yAxisId="left" tick={{ fill: '#f97316', fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ background: '#1a2234', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                            <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
-                            <Bar yAxisId="left" dataKey="slope" name="Slope (deg)" fill="#f97316" radius={[2, 2, 0, 0]} fillOpacity={0.6} />
-                            <Bar yAxisId="right" dataKey="risk" name="Risk Score" radius={[2, 2, 0, 0]}>
-                              {predictions.map((p, i) => <Cell key={i} fill={riskColor[p.risk_level]} />)}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                    <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 4, color: '#e2e8f0' }}>📈 Slope Angle vs Risk Score</h3>
+                      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>Each bar = one zone. Left axis = slope, Right axis = risk score.</p>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={predictions.map(p => {
+                          const zone = zones.find(z => z.id === p.zone_id);
+                          return { name: p.zone_name.substring(0, 10), slope: zone?.slope_angle_deg || 0, risk: p.risk_score, fill: riskColor[p.risk_level] };
+                        })}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                          <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 9 }} angle={-45} textAnchor="end" height={60} />
+                          <YAxis yAxisId="left" tick={{ fill: '#f97316', fontSize: 11 }} label={{ value: 'Slope (°)', angle: -90, position: 'insideLeft', fill: '#f97316', fontSize: 11 }} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} label={{ value: 'Risk %', angle: 90, position: 'insideRight', fill: '#ef4444', fontSize: 11 }} />
+                          <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8 }} />
+                          <Bar yAxisId="left" dataKey="slope" fill="#f97316" radius={[2, 2, 0, 0]} fillOpacity={0.6} />
+                          <Bar yAxisId="right" dataKey="risk" radius={[2, 2, 0, 0]}>
+                            {predictions.map((p, i) => <Cell key={i} fill={riskColor[p.risk_level]} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
 
-                    <div className="card">
-                      <div className="card-header">
-                        <div>
-                          <div className="card-title"><MapIcon size={16} className="card-title-icon" /> Real-Time Risk Heatmap</div>
-                          <div className="card-subtitle">Circle size indicates risk magnitude</div>
-                        </div>
+                    <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden', height: 360 }}>
+                      <div style={{ padding: '12px 16px', borderBottom: '1px solid #334155' }}>
+                        <h3 style={{ fontSize: 15, color: '#e2e8f0' }}>🗺️ Real-Time Risk Heatmap</h3>
+                        <p style={{ fontSize: 11, color: '#64748b' }}>Circle size = risk score. Color = risk level.</p>
                       </div>
-                      <div className="map-wrapper" style={{ height: 320 }}>
-                        <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-                          {predictions.map(p => (
-                            <CircleMarker key={p.zone_id} center={[
-                              zones.find(z => z.id === p.zone_id)?.latitude || 25.5,
-                              zones.find(z => z.id === p.zone_id)?.longitude || 93.0
-                            ]} radius={Math.max(5, p.risk_score / 5)} fillColor={riskColor[p.risk_level]} color="white" weight={1} fillOpacity={0.8}>
-                              <Popup><div style={{ fontFamily: 'Inter, sans-serif', color: '#1e293b' }}><strong>{p.zone_name}</strong><br />Risk: <span style={{ color: riskColor[p.risk_level] }}>{p.risk_level.toUpperCase()} ({p.risk_score}%)</span><br />Confidence: {(p.confidence * 100).toFixed(0)}%</div></Popup>
-                            </CircleMarker>
-                          ))}
-                        </MapContainer>
-                      </div>
+                      <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: 300, width: '100%' }} scrollWheelZoom={false}>
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OSM" />
+                        {predictions.map(p => (
+                          <CircleMarker key={p.zone_id} center={[
+                            zones.find(z => z.id === p.zone_id)?.latitude || 25.5,
+                            zones.find(z => z.id === p.zone_id)?.longitude || 93.0
+                          ]} radius={Math.max(5, p.risk_score / 5)} fillColor={riskColor[p.risk_level]} color="white" weight={1} fillOpacity={0.8}>
+                            <Popup><div style={{ fontFamily: 'sans-serif', color: '#1e293b' }}><strong>{p.zone_name}</strong><br />Risk: <span style={{ color: riskColor[p.risk_level] }}>{p.risk_level.toUpperCase()} ({p.risk_score}%)</span><br />Confidence: {(p.confidence * 100).toFixed(0)}%</div></Popup>
+                          </CircleMarker>
+                        ))}
+                      </MapContainer>
                     </div>
                   </div>
 
-                  <div className="grid-2 mb-5">
-                    <div className="card">
-                      <div className="card-header">
-                        <div>
-                          <div className="card-title"><CloudRain size={16} className="card-title-icon" /> Rainfall Factor vs Risk Score</div>
-                          <div className="card-subtitle">Rainfall contribution correlation with overall risk</div>
-                        </div>
-                      </div>
-                      <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={260}>
-                          <BarChart data={predictions.map(p => ({ name: p.zone_name.substring(0, 10), rainfall: p.contributing_factors.rainfall || 0, risk: p.risk_score }))}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 9 }} angle={-45} textAnchor="end" height={60} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ background: '#1a2234', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                            <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
-                            <Bar dataKey="rainfall" name="Rainfall Factor" fill="#3b82f6" radius={[2, 2, 0, 0]} fillOpacity={0.7} />
-                            <Bar dataKey="risk" name="Total Risk" fill="#ef4444" radius={[2, 2, 0, 0]} fillOpacity={0.7} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                    <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 4, color: '#e2e8f0' }}>🌧️ Rainfall Factor vs Risk Score</h3>
+                      <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>How rainfall contribution correlates with overall risk.</p>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <BarChart data={predictions.map(p => ({ name: p.zone_name.substring(0, 10), rainfall: p.contributing_factors.rainfall || 0, risk: p.risk_score }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                          <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 9 }} angle={-45} textAnchor="end" height={60} />
+                          <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                          <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8 }} />
+                          <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+                          <Bar dataKey="rainfall" name="Rainfall Factor" fill="#3b82f6" radius={[2, 2, 0, 0]} fillOpacity={0.7} />
+                          <Bar dataKey="risk" name="Total Risk" fill="#ef4444" radius={[2, 2, 0, 0]} fillOpacity={0.7} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
 
-                    <div className="card">
-                      <div className="card-header">
-                        <div>
-                          <div className="card-title"><Activity size={16} className="card-title-icon" /> Top Zone Risk Factor Breakdown</div>
-                          {(() => { const top = [...predictions].sort((a, b) => b.risk_score - a.risk_score)[0]; return top ? <div className="card-subtitle">{top.zone_name} — {top.risk_level.toUpperCase()}</div> : null; })()}
+                    {(() => {
+                      const sorted = [...predictions].sort((a, b) => b.risk_score - a.risk_score);
+                      const top = sorted[0];
+                      const radarData = top ? Object.entries(top.contributing_factors).map(([k, v]) => ({ factor: k, value: v, fullMark: 100 })) : [];
+                      return (
+                        <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                          <h3 style={{ fontSize: 15, marginBottom: 4, color: '#e2e8f0' }}>🎯 Top Zone Risk Factor Breakdown</h3>
+                          <p style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{top ? top.zone_name : 'N/A'} — {top ? top.risk_level.toUpperCase() : ''}</p>
+                          <ResponsiveContainer width="100%" height={260}>
+                            <RadarChart data={radarData}>
+                              <PolarGrid stroke="#334155" />
+                              <PolarAngleAxis dataKey="factor" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                              <PolarRadiusAxis tick={{ fill: '#64748b', fontSize: 9 }} domain={[0, 100]} />
+                              <Radar name="Risk Factors" dataKey="value" stroke="#a855f7" fill="#a855f7" fillOpacity={0.3} />
+                            </RadarChart>
+                          </ResponsiveContainer>
                         </div>
-                      </div>
-                      <div className="chart-container">
-                        {(() => {
-                          const top = [...predictions].sort((a, b) => b.risk_score - a.risk_score)[0];
-                          const radarData = top ? Object.entries(top.contributing_factors).map(([k, v]) => ({ factor: k, value: v, fullMark: 100 })) : [];
-                          return (
-                            <ResponsiveContainer width="100%" height={260}>
-                              <RadarChart data={radarData}>
-                                <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                                <PolarAngleAxis dataKey="factor" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                                <PolarRadiusAxis tick={{ fill: '#64748b', fontSize: 9 }} domain={[0, 100]} />
-                                <Radar name="Risk Factors" dataKey="value" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.2} strokeWidth={2} />
-                              </RadarChart>
-                            </ResponsiveContainer>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </div>
 
-                  <div className="grid-2">
-                    <div className="card">
-                      <div className="card-header">
-                        <div className="card-title"><BarChart3 size={16} className="card-title-icon" /> All Zone Risk Scores</div>
-                      </div>
-                      <div className="chart-container">
-                        <ResponsiveContainer width="100%" height={400}>
-                          <BarChart data={[...predictions].sort((a, b) => b.risk_score - a.risk_score).map(p => ({ name: p.zone_name.substring(0, 14), score: p.risk_score }))} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis type="number" domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <YAxis dataKey="name" type="category" width={110} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <Tooltip contentStyle={{ background: '#1a2234', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }} />
-                            <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                              {[...predictions].sort((a, b) => b.risk_score - a.risk_score).map((p, i) => <Cell key={i} fill={riskColor[p.risk_level]} />)}
-                            </Bar>
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                    <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                      <h3 style={{ fontSize: 15, marginBottom: 12 }}>📊 All Zone Risk Scores</h3>
+                      <ResponsiveContainer width="100%" height={400}>
+                        <BarChart data={[...predictions].sort((a, b) => b.risk_score - a.risk_score).map(p => ({ name: p.zone_name.substring(0, 14), score: p.risk_score }))} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                          <XAxis type="number" domain={[0, 100]} tick={{ fill: '#94a3b8' }} />
+                          <YAxis dataKey="name" type="category" width={110} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                          <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #475569', borderRadius: 8 }} />
+                          <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                            {[...predictions].sort((a, b) => b.risk_score - a.risk_score).map((p, i) => <Cell key={i} fill={riskColor[p.risk_level]} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      <div className="card">
-                        <div className="card-header">
-                          <div className="card-title"><BarChart3 size={16} className="card-title-icon" /> Prediction Summary</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20 }}>
+                        <h3 style={{ fontSize: 15, marginBottom: 12 }}>📈 Prediction Summary</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                          <div style={{ padding: 12, background: '#0f172a', borderRadius: 8 }}><div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>{predictions.filter(p => p.risk_level === 'critical').length}</div><div style={{ fontSize: 12, color: '#64748b' }}>Critical Zones</div></div>
+                          <div style={{ padding: 12, background: '#0f172a', borderRadius: 8 }}><div style={{ fontSize: 24, fontWeight: 700, color: '#f97316' }}>{predictions.filter(p => p.risk_level === 'high').length}</div><div style={{ fontSize: 12, color: '#64748b' }}>High Risk</div></div>
+                          <div style={{ padding: 12, background: '#0f172a', borderRadius: 8 }}><div style={{ fontSize: 24, fontWeight: 700, color: '#eab308' }}>{predictions.filter(p => p.risk_level === 'moderate').length}</div><div style={{ fontSize: 12, color: '#64748b' }}>Moderate Risk</div></div>
+                          <div style={{ padding: 12, background: '#0f172a', borderRadius: 8 }}><div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>{predictions.filter(p => p.risk_level === 'low').length}</div><div style={{ fontSize: 12, color: '#64748b' }}>Low Risk</div></div>
                         </div>
-                        <div className="card-body">
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                            {([
-                              ['Critical', predictions.filter(p => p.risk_level === 'critical').length, '#ef4444'],
-                              ['High Risk', predictions.filter(p => p.risk_level === 'high').length, '#f97316'],
-                              ['Moderate', predictions.filter(p => p.risk_level === 'moderate').length, '#eab308'],
-                              ['Low Risk', predictions.filter(p => p.risk_level === 'low').length, '#22c55e'],
-                            ] as [string, number, string][]).map(([label, count, color]) => (
-                              <div key={label} style={{ padding: 12, background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)' }}>
-                                <div style={{ fontSize: 22, fontWeight: 700, color, fontVariantNumeric: 'tabular-nums' }}>{count}</div>
-                                <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{label}</div>
-                              </div>
-                            ))}
-                          </div>
-                          <div style={{ marginTop: 12, padding: 12, background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', fontSize: 12, color: 'var(--text-secondary)' }}>
-                            <div>Avg Risk: <strong style={{ color: 'var(--text-primary)' }}>{(predictions.reduce((s, p) => s + p.risk_score, 0) / predictions.length).toFixed(1)}%</strong></div>
-                            <div style={{ marginTop: 3 }}>Avg Confidence: <strong style={{ color: 'var(--text-primary)' }}>{(predictions.reduce((s, p) => s + p.confidence, 0) / predictions.length * 100).toFixed(0)}%</strong></div>
-                          </div>
+                        <div style={{ marginTop: 12, padding: 12, background: '#0f172a', borderRadius: 8 }}>
+                          <div style={{ fontSize: 13, color: '#94a3b8' }}>Average Risk Score: <strong style={{ color: '#e2e8f0' }}>{(predictions.reduce((s, p) => s + p.risk_score, 0) / predictions.length).toFixed(1)}%</strong></div>
+                          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>Avg Confidence: <strong style={{ color: '#e2e8f0' }}>{(predictions.reduce((s, p) => s + p.confidence, 0) / predictions.length * 100).toFixed(0)}%</strong></div>
                         </div>
                       </div>
 
-                      <div className="card" style={{ flex: 1 }}>
-                        <div className="card-header">
-                          <div className="card-title"><AlertTriangle size={16} className="card-title-icon" /> Priority Actions</div>
-                        </div>
-                        <div className="card-body" style={{ padding: '8px 16px', maxHeight: 260, overflowY: 'auto' }}>
-                          {[...predictions].sort((a, b) => b.risk_score - a.risk_score).slice(0, 5).map((p, idx) => (
-                            <div key={p.zone_id} className={`alert-card ${p.risk_level}`} style={{ marginBottom: 8, borderLeftWidth: 3 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--text-primary)' }}>#{idx + 1} {p.zone_name}</span>
-                                <span style={{ fontWeight: 700, fontSize: 12, color: riskColor[p.risk_level], fontVariantNumeric: 'tabular-nums' }}>{p.risk_score}%</span>
-                              </div>
-                              <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{p.recommended_actions[0]}</div>
+                      <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 20, flex: 1, overflowY: 'auto', maxHeight: 300 }}>
+                        <h3 style={{ fontSize: 15, marginBottom: 12 }}>🚨 Priority Actions</h3>
+                        {[...predictions].sort((a, b) => b.risk_score - a.risk_score).slice(0, 5).map((p, idx) => (
+                          <div key={p.zone_id} style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 8, background: riskBg[p.risk_level], border: `1px solid ${riskColor[p.risk_level]}33` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontWeight: 600, fontSize: 13 }}>#{idx + 1} {p.zone_name}</span>
+                              <span style={{ fontWeight: 700, fontSize: 13, color: riskColor[p.risk_level] }}>{p.risk_score}%</span>
                             </div>
-                          ))}
-                        </div>
+                            <div style={{ fontSize: 11, color: '#cbd5e1' }}>{p.recommended_actions[0]}</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 6 }}>
+                              {Object.entries(p.contributing_factors).slice(0, 4).map(([k, v]) => (
+                                <span key={k} style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#334155', color: '#94a3b8' }}>{k}: {v.toFixed(0)}</span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </>
               )}
-
               {predictions.length === 0 && !predicting && (
-                <div className="card" style={{ textAlign: 'center', padding: 56 }}>
-                  <Brain size={44} style={{ color: 'var(--text-disabled)', margin: '0 auto 16px' }} />
-                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Run Predictions to Begin Analysis</p>
-                  <p style={{ fontSize: 12.5, color: 'var(--text-tertiary)', maxWidth: 460, margin: '0 auto', lineHeight: 1.7 }}>
-                    The AI model analyzes real-time rainfall, slope geometry, soil type, vegetation cover, sensor anomalies, and historical event data for all 24 monitored zones across the North Eastern Region.
-                  </p>
-                  <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 16 }}>
-                    {([
-                      [CloudRain, 'Rainfall Data'],
-                      [Mountain, 'Terrain Analysis'],
-                      [Radio, 'Sensor Feeds'],
-                      [BarChart3, 'Historical'],
-                    ] as any[]).map(([Icon, label]: [any, string]) => (
-                      <div key={label} style={{ padding: '14px 18px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-                        <Icon size={20} style={{ color: 'var(--text-tertiary)', margin: '0 auto 6px' }} />
-                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{label}</div>
-                      </div>
-                    ))}
+                <div style={{ textAlign: 'center', padding: 60, color: '#64748b', background: '#1e293b', borderRadius: 12, border: '1px solid #334155' }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>🧠</div>
+                  <p style={{ fontSize: 16, color: '#e2e8f0' }}>Click "Run Predictions" to analyze all zones</p>
+                  <p style={{ fontSize: 13, marginTop: 8 }}>The AI model analyzes real-time rainfall, slope geometry, soil type, vegetation cover, sensor anomalies, and historical event data for all 24 monitored zones across the North Eastern Region.</p>
+                  <div style={{ marginTop: 20, display: 'flex', justifyContent: 'center', gap: 20 }}>
+                    <div style={{ padding: 12, background: '#334155', borderRadius: 8, textAlign: 'center' }}><div style={{ fontSize: 20 }}>🌧️</div><div style={{ fontSize: 11, marginTop: 4 }}>Rainfall Data</div></div>
+                    <div style={{ padding: 12, background: '#334155', borderRadius: 8, textAlign: 'center' }}><div style={{ fontSize: 20 }}>⛰️</div><div style={{ fontSize: 11, marginTop: 4 }}>Terrain Analysis</div></div>
+                    <div style={{ padding: 12, background: '#334155', borderRadius: 8, textAlign: 'center' }}><div style={{ fontSize: 20 }}>📡</div><div style={{ fontSize: 11, marginTop: 4 }}>Sensor Feeds</div></div>
+                    <div style={{ padding: 12, background: '#334155', borderRadius: 8, textAlign: 'center' }}><div style={{ fontSize: 20 }}>📊</div><div style={{ fontSize: 11, marginTop: 4 }}>History</div></div>
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
 
-          {/* ============ HISTORY ============ */}
           {page === 'history' && <HistoryPage />}
-        </div>
+        </main>
 
-        {/* Footer */}
-        <footer style={{ padding: '14px 24px', textAlign: 'center', color: 'var(--text-disabled)', fontSize: 11, borderTop: '1px solid var(--border-subtle)' }}>
-          NER Landslide Early Warning System v1.0 — AI-Powered Disaster Monitoring for North Eastern Region
-        </footer>
-      </div>
+        {/* ============ REPORT MODAL ============ */}
+        {showReportForm && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); photoPreviewUrls.forEach(u => URL.revokeObjectURL(u)); setPhotoPreviewUrls([]); }}>
+            <div style={{ background: '#1e293b', borderRadius: 16, padding: 28, width: 440, maxWidth: '90vw', border: '1px solid #334155', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+              <h3 style={{ fontSize: 18, marginBottom: 16, color: '#f1f5f9' }}>📸 Submit Field Report</h3>
 
-      {/* ============ REPORT MODAL ============ */}
-      {showReportForm && (
-        <div className="modal-overlay" onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); photoPreviewUrls.forEach(u => URL.revokeObjectURL(u)); setPhotoPreviewUrls([]); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Submit Field Report</h3>
-              <button className="btn btn-icon btn-ghost" onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); }}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className="modal-body">
-              {/* Location */}
-              <div style={{ marginBottom: 16, padding: 12, borderRadius: 'var(--radius-md)', background: userLocation ? 'var(--status-success-bg)' : locationError ? 'var(--status-warning-bg)' : 'var(--status-info-bg)', border: `1px solid ${userLocation ? 'rgba(34,197,94,0.2)' : locationError ? 'rgba(234,179,8,0.2)' : 'rgba(99,145,255,0.2)'}` }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: userLocation ? 'var(--status-success)' : locationError ? 'var(--status-warning)' : 'var(--status-info)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {userLocation ? <CheckCircle2 size={14} /> : locationError ? <AlertTriangle size={14} /> : <Loader2 size={14} className="animate-spin" />}
-                  {userLocation ? 'GPS location acquired' : locationError ? 'Using fallback location' : 'Detecting location...'}
+              <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: userLocation ? 'rgba(34,197,94,0.1)' : locationError ? 'rgba(234,179,8,0.1)' : 'rgba(96,165,250,0.1)', border: `1px solid ${userLocation ? '#22c55e44' : locationError ? '#eab30844' : '#60a5fa44'}` }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: userLocation ? '#22c55e' : locationError ? '#eab308' : '#60a5fa', marginBottom: 4 }}>
+                  {userLocation ? '✅ Location detected' : locationError ? '⚠️ Location fallback' : '📍 Detecting your location...'}
                 </div>
                 {userLocation && (
-                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
-                    Lat {userLocation.lat.toFixed(6)}, Lon {userLocation.lon.toFixed(6)}
-                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>🌐 GPS: Lat {userLocation.lat.toFixed(6)}, Lon {userLocation.lon.toFixed(6)}</div>
                 )}
-                {locationError && !userLocation && <div style={{ fontSize: 11, color: 'var(--status-warning)', marginTop: 4 }}>{locationError}</div>}
+                {locationError && !userLocation && <div style={{ fontSize: 11, color: '#eab308' }}>{locationError}</div>}
               </div>
 
               <form onSubmit={submitReport}>
-                <div className="form-group">
-                  <label className="form-label">Your Name</label>
-                  <input name="reporter_name" defaultValue="Anonymous" required className="form-input" />
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Your Name</label>
+                  <input name="reporter_name" defaultValue="Anonymous" required style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }} />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Phone (optional)</label>
-                  <input name="reporter_phone" className="form-input" />
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Phone</label>
+                  <input name="reporter_phone" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div className="form-group">
-                    <label className="form-label">Report Type</label>
-                    <select name="report_type" className="form-select">
-                      <option value="crack">Crack in ground/building</option>
-                      <option value="slope_movement">Slope movement</option>
-                      <option value="blocked_road">Blocked road</option>
-                      <option value="flooding">Flooding</option>
-                      <option value="landslide">Landslide observed</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Severity</label>
-                    <select name="severity_claimed" className="form-select">
-                      <option value="low">Low</option>
-                      <option value="moderate">Moderate</option>
-                      <option value="high">High</option>
-                      <option value="critical">Critical</option>
-                    </select>
-                  </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Report Type</label>
+                  <select name="report_type" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }}>
+                    <option value="crack">Crack in ground/building</option>
+                    <option value="slope_movement">Slope movement</option>
+                    <option value="blocked_road">Blocked road</option>
+                    <option value="flooding">Flooding</option>
+                    <option value="landslide">Landslide observed</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Description *</label>
-                  <textarea name="description" rows={3} required placeholder="Describe what you observed..." className="form-textarea" />
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Severity</label>
+                  <select name="severity_claimed" style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }}>
+                    <option value="low">Low</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Description *</label>
+                  <textarea name="description" rows={3} required placeholder="Describe what you observed..." style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14, resize: 'vertical' }} />
                 </div>
 
                 {reportStatus.type && (
-                  <div style={{ marginBottom: 14, padding: 12, borderRadius: 'var(--radius-md)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8, background: reportStatus.type === 'success' ? 'var(--status-success-bg)' : reportStatus.type === 'error' ? 'var(--status-error-bg)' : 'var(--status-info-bg)', color: reportStatus.type === 'success' ? 'var(--status-success)' : reportStatus.type === 'error' ? 'var(--status-error)' : 'var(--status-info)', border: `1px solid ${reportStatus.type === 'success' ? 'rgba(34,197,94,0.2)' : reportStatus.type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(99,145,255,0.2)'}` }}>
-                    {reportStatus.type === 'loading' ? <Loader2 size={14} className="animate-spin" /> : reportStatus.type === 'success' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                    {reportStatus.message}
+                  <div style={{ marginBottom: 12, padding: 12, borderRadius: 8, fontSize: 13, background: reportStatus.type === 'success' ? 'rgba(34,197,94,0.15)' : reportStatus.type === 'error' ? 'rgba(239,68,68,0.15)' : 'rgba(96,165,250,0.15)', color: reportStatus.type === 'success' ? '#22c55e' : reportStatus.type === 'error' ? '#ef4444' : '#60a5fa', border: `1px solid ${reportStatus.type === 'success' ? '#22c55e44' : reportStatus.type === 'error' ? '#ef444444' : '#60a5fa44'}` }}>
+                    {reportStatus.type === 'loading' ? '⏳ ' : reportStatus.type === 'success' ? '✅ ' : '❌ '}{reportStatus.message}
                   </div>
                 )}
 
-                {/* Photo Upload */}
-                <div className="form-group">
-                  <label className="form-label">Photos (optional, max 5)</label>
-                  <label className="photo-dropzone">
-                    <Camera size={20} style={{ color: 'var(--text-tertiary)', margin: '0 auto 6px' }} />
-                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Click to attach photos</div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>📸 Photo/Video (optional, max 5)</label>
+                  <label style={{ display: 'block', padding: 16, border: '2px dashed #475569', borderRadius: 8, textAlign: 'center', color: '#64748b', fontSize: 13, cursor: 'pointer' }}>
+                    📷 Click to attach photo or video
                     <input type="file" accept="image/*,video/*" capture="environment" multiple onChange={handlePhotoSelect} style={{ display: 'none' }} />
                   </label>
                   {photoPreviewUrls.length > 0 && (
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
                       {photoPreviewUrls.map((url, i) => (
-                        <div key={i} className="photo-preview">
-                          <img src={url} alt={`Preview ${i + 1}`} />
-                          <button type="button" className="photo-preview-remove" onClick={() => removePhoto(i)}>×</button>
+                        <div key={i} style={{ position: 'relative' }}>
+                          <img src={url} alt={`Preview ${i + 1}`} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8, border: '2px solid #475569' }} />
+                          <button type="button" onClick={() => removePhoto(i)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#ef4444', color: 'white', border: 'none', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                         </div>
                       ))}
                     </div>
                   )}
-                  {userLocation && <div style={{ marginTop: 6, fontSize: 11, color: 'var(--status-success)', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={11} /> GPS: {userLocation.lat.toFixed(4)}°N, {userLocation.lon.toFixed(4)}°E — auto-tagged</div>}
+                  {userLocation && <div style={{ marginTop: 6, fontSize: 11, color: '#22c55e' }}>📍 GPS: {userLocation.lat.toFixed(4)}°N, {userLocation.lon.toFixed(4)}°E — auto-tagged</div>}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {reportStatus.type === 'success' ? (
+                    <button type="button" onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); photoPreviewUrls.forEach(u => URL.revokeObjectURL(u)); setPhotoPreviewUrls([]); setPage('reports'); loadReports(); }} style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: '#22c55e', color: 'white', fontSize: 14, cursor: 'pointer' }}>
+                      ✅ View My Report
+                    </button>
+                  ) : (
+                    <button type="submit" disabled={!userLocation || reportStatus.type === 'loading'} style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: (!userLocation || reportStatus.type === 'loading') ? '#475569' : '#2563eb', color: 'white', fontSize: 14, cursor: (!userLocation || reportStatus.type === 'loading') ? 'not-allowed' : 'pointer' }}>
+                      {reportStatus.type === 'loading' ? '⏳ Submitting...' : '📍 Submit with Location'}
+                    </button>
+                  )}
+                  <button type="button" onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); photoPreviewUrls.forEach(u => URL.revokeObjectURL(u)); setPhotoPreviewUrls([]); }} style={{ padding: 10, borderRadius: 8, border: '1px solid #475569', background: 'transparent', color: '#94a3b8', fontSize: 14, cursor: 'pointer' }}>Close</button>
                 </div>
               </form>
             </div>
-            <div className="modal-footer">
-              {reportStatus.type === 'success' ? (
-                <button className="btn btn-success" onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); photoPreviewUrls.forEach(u => URL.revokeObjectURL(u)); setPhotoPreviewUrls([]); setPage('reports'); loadReports(); }}>
-                  <CheckCircle2 size={14} /> View Report
-                </button>
-              ) : (
-                <button className="btn btn-primary" onClick={(e) => { e.preventDefault(); document.querySelector<HTMLFormElement>('.modal-content form')?.requestSubmit(); }}
-                  disabled={!userLocation || reportStatus.type === 'loading'}>
-                  {reportStatus.type === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                  {reportStatus.type === 'loading' ? 'Submitting...' : 'Submit Report'}
-                </button>
-              )}
-              <button className="btn btn-ghost" onClick={() => { setShowReportForm(false); setReportStatus({ type: null, message: '' }); setReportPhotos([]); photoPreviewUrls.forEach(u => URL.revokeObjectURL(u)); setPhotoPreviewUrls([]); }}>Cancel</button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ============ ADMIN LOGIN MODAL ============ */}
-      {showAdminLogin && (
-        <div className="modal-overlay" onClick={() => { setShowAdminLogin(false); setAdminLoginError(''); setAdminPassword(''); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ width: 380 }}>
-            <div className="modal-header" style={{ justifyContent: 'center', paddingBottom: 0 }}>
-              <div style={{ textAlign: 'center' }}>
-                <Shield size={32} style={{ color: 'var(--accent-blue)', margin: '0 auto 10px' }} />
-                <h3 className="modal-title" style={{ fontSize: 17 }}>Administrator Access</h3>
-                <p style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 4 }}>Field reports are restricted to authorized personnel</p>
-              </div>
-            </div>
-            <div className="modal-body">
+        {/* ============ ADMIN LOGIN MODAL ============ */}
+        {showAdminLogin && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => { setShowAdminLogin(false); setAdminLoginError(''); setAdminPassword(''); }}>
+            <div style={{ background: '#1e293b', borderRadius: 16, padding: 28, width: 380, maxWidth: '90vw', border: '1px solid #334155' }} onClick={e => e.stopPropagation()}>
+              <h3 style={{ fontSize: 18, marginBottom: 16, color: '#f1f5f9', textAlign: 'center' }}>🔐 Admin Login</h3>
+              <p style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginBottom: 16 }}>Reports are only accessible to authorized administrators.</p>
               <form onSubmit={(e) => { e.preventDefault(); handleAdminLogin(); }}>
-                <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Enter admin password" autoFocus className="form-input" />
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Admin Password</label>
+                  <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} placeholder="Enter admin password" autoFocus style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }} />
                 </div>
                 {adminLoginError && (
-                  <div style={{ marginBottom: 14, padding: 10, borderRadius: 'var(--radius-md)', background: 'var(--status-error-bg)', color: 'var(--status-error)', fontSize: 12, border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <XCircle size={14} /> {adminLoginError}
+                  <div style={{ marginBottom: 12, padding: 10, borderRadius: 8, background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: 13, border: '1px solid #ef444444' }}>
+                    ❌ {adminLoginError}
                   </div>
                 )}
-                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={!adminPassword || adminLoggingIn}>
-                  {adminLoggingIn ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
-                  {adminLoggingIn ? 'Verifying...' : 'Login'}
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="submit" disabled={!adminPassword || adminLoggingIn} style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: (!adminPassword || adminLoggingIn) ? '#475569' : '#2563eb', color: 'white', fontSize: 14, cursor: (!adminPassword || adminLoggingIn) ? 'not-allowed' : 'pointer' }}>
+                    {adminLoggingIn ? '⏳ Verifying...' : '🔓 Login'}
+                  </button>
+                  <button type="button" onClick={() => { setShowAdminLogin(false); setAdminLoginError(''); setAdminPassword(''); }} style={{ padding: 10, borderRadius: 8, border: '1px solid #475569', background: 'transparent', color: '#94a3b8', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+                </div>
+                <div style={{ marginTop: 12, padding: 10, borderRadius: 8, background: '#0f172a', fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+                  💡 Hint: Password is <code style={{ color: '#60a5fa' }}>admin123</code>
+                </div>
               </form>
-              <div style={{ marginTop: 14, padding: 10, borderRadius: 'var(--radius-md)', background: 'var(--bg-surface)', fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                Hint: <code style={{ color: 'var(--accent-blue)', fontFamily: 'JetBrains Mono, monospace' }}>admin123</code>
-              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ============ TOAST ============ */}
-      {toast && (
-        <div className={`toast ${toast.type}`}>
-          {toast.type === 'success' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-          {toast.message}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============ HISTORY PAGE (SEPARATE COMPONENT) ============
-function HistoryPage() {
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAPI<any>('/historical-landslides')
-      .then(d => setRecords(d.records || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const severityColors: Record<string, string> = { critical: '#ef4444', high: '#f97316', moderate: '#eab308', low: '#22c55e' };
-  const totalCasualties = records.reduce((s: number, r: any) => s + (r.casualties || 0), 0);
-  const totalDisplaced = records.reduce((s: number, r: any) => s + (r.displaced || 0), 0);
-  const totalBlocked = records.filter((r: any) => r.road_blocked).length;
-
-  return (
-    <div>
-      <div className="page-header">
-        <div>
-          <div className="page-title">Historical Landslide Records</div>
-          <div className="page-subtitle">Verified events across the North Eastern Region (2023-2024)</div>
-        </div>
-      </div>
-
-      <div className="history-grid">
-        {[
-          ['Total Events', records.length, '#6391ff'],
-          ['Casualties', totalCasualties, '#ef4444'],
-          ['People Displaced', totalDisplaced.toLocaleString(), '#f97316'],
-          ['Roads Blocked', totalBlocked, '#eab308'],
-        ].map(([label, value, color]) => (
-          <div key={label} className="history-stat">
-            <div className="history-stat-label">{label}</div>
-            <div className="history-stat-value" style={{ color }}>{value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="card">
-        {loading ? (
-          <div style={{ padding: 40, textAlign: 'center' }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 12px' }} />
-            <p style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>Loading records...</p>
-          </div>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Zone / Description</th>
-                <th>Type</th>
-                <th>Severity</th>
-                <th>Casualties</th>
-                <th>Displaced</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((r: any) => (
-                <tr key={r.id}>
-                  <td style={{ whiteSpace: 'nowrap', color: 'var(--text-tertiary)' }}>{r.date}</td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{r.zone} — {r.district}, {r.state}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{r.description}</div>
-                  </td>
-                  <td><span className="badge badge-outline">{r.type}</span></td>
-                  <td><span className={`badge ${r.severity === 'critical' ? 'badge-critical' : r.severity === 'high' ? 'badge-high' : r.severity === 'moderate' ? 'badge-moderate' : 'badge-low'}`}>{r.severity.toUpperCase()}</span></td>
-                  <td style={{ color: r.casualties > 0 ? 'var(--risk-critical)' : 'var(--text-tertiary)', fontWeight: r.casualties > 0 ? 700 : 400, fontVariantNumeric: 'tabular-nums' }}>{r.casualties}</td>
-                  <td style={{ color: 'var(--risk-high)', fontVariantNumeric: 'tabular-nums' }}>{r.displaced?.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         )}
+
+        {/* ============ FOOTER ============ */}
+        <footer style={{ padding: '16px 24px', textAlign: 'center', color: '#475569', fontSize: 12, borderTop: '1px solid #1e293b' }}>
+          NER Landslide Early Warning System v1.0 | AI-Powered Disaster Monitoring for North Eastern Region | Built for Climate-Resilient Governance
+        </footer>
       </div>
     </div>
   );

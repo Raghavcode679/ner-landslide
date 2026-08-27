@@ -372,6 +372,53 @@ export default function App() {
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [dataSourceStatus, setDataSourceStatus] = useState<Record<string, any>>({});
   const [syncingRealData, setSyncingRealData] = useState(false);
+  const [smsPhone, setSmsPhone] = useState('');
+  const [smsMessage, setSmsMessage] = useState('');
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsResult, setSmsResult] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+
+  const HELPLINES = [
+    { name: 'Emergency (112)', phone: '112', icon: '🚨' },
+    { name: 'NDRF (1070)', phone: '1070', icon: '🛟' },
+    { name: 'NDMA (1078)', phone: '1078', icon: '⚠️' },
+    { name: 'Disaster Helpline (1077)', phone: '1077', icon: '📞' },
+    { name: 'Police (100)', phone: '100', icon: '👮' },
+    { name: 'Fire (101)', phone: '101', icon: '🚒' },
+    { name: 'Ambulance (108)', phone: '108', icon: '🚑' },
+    { name: 'Blood Bank (104)', phone: '104', icon: '🩸' },
+  ];
+
+  const sendDirectSMS = async (phone: string, message: string) => {
+    if (!phone || !message) return;
+    setSmsSending(true);
+    setSmsResult({ type: null, message: '' });
+    try {
+      const formData = new FormData();
+      formData.append('phone', phone);
+      formData.append('message', message);
+      formData.append('priority', 'high');
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const resp = await fetch(`${API_BASE}/notifications/send`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setSmsResult({ type: 'success', message: `SMS ${data.status === 'sent' ? 'sent' : 'logged'} to ${phone} via ${data.provider || 'demo'}` });
+        setSmsPhone('');
+        setSmsMessage('');
+      } else {
+        setSmsResult({ type: 'error', message: data.detail || 'Failed to send SMS' });
+      }
+    } catch (e) {
+      setSmsResult({ type: 'error', message: 'Network error — check connection' });
+    }
+    setSmsSending(false);
+    setTimeout(() => setSmsResult({ type: null, message: '' }), 5000);
+  };
 
   const t = LANGUAGES[lang] || LANGUAGES.en;
 
@@ -1080,6 +1127,86 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* SMS Direct Panel (Admin only) */}
+            {isAdmin && (
+              <div style={{ marginTop: 24 }}>
+                <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 24 }}>
+                  <h3 style={{ fontSize: 16, color: '#f1f5f9', marginBottom: 16 }}>📱 Send SMS Alert</h3>
+
+                  {/* Helpline Quick Buttons */}
+                  <div style={{ marginBottom: 20 }}>
+                    <p style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>Quick Send to Helpline:</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {HELPLINES.map(h => (
+                        <button key={h.phone} onClick={() => {
+                          setSmsPhone(h.phone);
+                          setSmsMessage(`[NER LANDSLIDE ALERT] Emergency report from NER Landslide Early Warning System. Please respond.`);
+                        }} style={{
+                          padding: '6px 12px', borderRadius: 8, border: '1px solid #475569',
+                          background: '#0f172a', color: '#e2e8f0', fontSize: 12, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4,
+                        }}>
+                          {h.icon} {h.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SMS Form */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 12, alignItems: 'end' }}>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Phone Number</label>
+                      <input
+                        type="tel"
+                        value={smsPhone}
+                        onChange={e => setSmsPhone(e.target.value)}
+                        placeholder="e.g. +919876543210 or 112"
+                        style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>Message</label>
+                      <input
+                        type="text"
+                        value={smsMessage}
+                        onChange={e => setSmsMessage(e.target.value)}
+                        placeholder="Type your alert message..."
+                        style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: 14 }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => sendDirectSMS(smsPhone, smsMessage)}
+                      disabled={!smsPhone || !smsMessage || smsSending}
+                      style={{
+                        padding: '10px 20px', borderRadius: 8, border: 'none',
+                        background: (!smsPhone || !smsMessage || smsSending) ? '#475569' : '#2563eb',
+                        color: 'white', fontSize: 14, cursor: (!smsPhone || !smsMessage || smsSending) ? 'not-allowed' : 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {smsSending ? '⏳ Sending...' : '📤 Send SMS'}
+                    </button>
+                  </div>
+
+                  {/* SMS Result */}
+                  {smsResult.type && (
+                    <div style={{
+                      marginTop: 12, padding: 10, borderRadius: 8, fontSize: 13,
+                      background: smsResult.type === 'success' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                      color: smsResult.type === 'success' ? '#22c55e' : '#ef4444',
+                      border: `1px solid ${smsResult.type === 'success' ? '#22c55e44' : '#ef444444'}`,
+                    }}>
+                      {smsResult.type === 'success' ? '✅' : '❌'} {smsResult.message}
+                    </div>
+                  )}
+
+                  <p style={{ fontSize: 11, color: '#64748b', marginTop: 8 }}>
+                    💡 In demo mode, SMS is logged. Set MSG91_API_KEY or TWILIO_* env vars to send real SMS.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

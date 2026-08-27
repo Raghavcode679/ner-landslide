@@ -293,6 +293,55 @@ function StatCard({ label, value, icon, color }: { label: string; value: string 
 }
 
 // ============ MAIN APP ============
+// ============ HISTORY PAGE ============
+function HistoryPage({ t }: { t: Record<string, string> }) {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAPI<any>('/historical-landslides')
+      .then(d => setRecords(d.records || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const severityColors: Record<string, string> = { critical: '#ef4444', high: '#f97316', moderate: '#eab308', low: '#22c55e' };
+  const totalCasualties = records.reduce((s: number, r: any) => s + (r.casualties || 0), 0);
+  const totalDisplaced = records.reduce((s: number, r: any) => s + (r.displaced || 0), 0);
+  const totalBlocked = records.filter((r: any) => r.road_blocked).length;
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9', marginBottom: 16 }}>📜 Historical Landslide Records — NER Region</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Total Events</div><div style={{ fontSize: 24, fontWeight: 700, color: '#60a5fa' }}>{records.length}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Casualties</div><div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>{totalCasualties}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>People Displaced</div><div style={{ fontSize: 24, fontWeight: 700, color: '#f97316' }}>{totalDisplaced.toLocaleString()}</div></div>
+        <div style={{ background: '#1e293b', padding: 16, borderRadius: 12, border: '1px solid #334155' }}><div style={{ fontSize: 11, color: '#64748b' }}>Roads Blocked</div><div style={{ fontSize: 24, fontWeight: 700, color: '#eab308' }}>{totalBlocked}</div></div>
+      </div>
+      <div style={{ background: '#1e293b', borderRadius: 12, border: '1px solid #334155', overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px 100px 100px', gap: 0, padding: '10px 16px', background: '#0f172a', borderBottom: '1px solid #334155', fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+          <div>Date</div><div>Zone / Description</div><div>Type</div><div>Severity</div><div>Casualties</div><div>Displaced</div>
+        </div>
+        {loading ? (
+          <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Loading records...</div>
+        ) : records.length === 0 ? (
+          <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>No historical records found.</div>
+        ) : records.map((r: any) => (
+          <div key={r.id} style={{ display: 'grid', gridTemplateColumns: '100px 1fr 120px 100px 100px 100px', gap: 0, padding: '12px 16px', borderBottom: '1px solid #1e293b', fontSize: 13, alignItems: 'start' }}>
+            <div style={{ color: '#94a3b8', whiteSpace: 'nowrap' }}>{r.date}</div>
+            <div><div style={{ fontWeight: 600, color: '#e2e8f0' }}>{r.zone} — {r.district}, {r.state}</div><div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{r.description}</div></div>
+            <div style={{ color: '#94a3b8' }}>{r.type}</div>
+            <div><span style={{ background: `${severityColors[r.severity]}22`, color: severityColors[r.severity], padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{r.severity.toUpperCase()}</span></div>
+            <div style={{ color: r.casualties > 0 ? '#ef4444' : '#64748b', fontWeight: r.casualties > 0 ? 700 : 400 }}>{r.casualties}</div>
+            <div style={{ color: '#f97316' }}>{r.displaced?.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [lang, setLang] = useState('en');
   const [page, setPage] = useState('dashboard');
@@ -1207,6 +1256,11 @@ export default function App() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ============ HISTORY PAGE ============ */}
+        {page === 'history' && (
+          <HistoryPage t={t} />
         )}
       </main>
 

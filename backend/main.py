@@ -803,25 +803,19 @@ async def simulate_road_disruption(db: Session = Depends(get_db)):
 
 # ============ LANDING PAGE ============
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def root():
+    """Serve the frontend dashboard at root."""
+    dist = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist')
+    index = os.path.join(dist, 'index.html')
+    if os.path.isfile(index):
+        from fastapi.responses import FileResponse
+        return FileResponse(index)
     return {
         "system": "NER Landslide Early Warning System",
         "version": "1.0.0",
-        "endpoints": {
-            "zones": "/api/zones",
-            "dashboard": "/api/dashboard",
-            "predictions": "/api/predictions",
-            "weather": "/api/weather/{zone_id}",
-            "roads": "/api/roads",
-            "villages": "/api/villages",
-            "alerts": "/api/alerts",
-            "reports": "/api/reports",
-            "heatmap": "/api/heatmap",
-            "stats": "/api/stats",
-            "simulate": "/api/simulate/update",
-            "ws": "/ws/alerts",
-        },
+        "message": "Frontend not built. Run: cd frontend && npm run build",
+        "docs": "/docs",
     }
 
 

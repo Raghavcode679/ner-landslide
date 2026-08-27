@@ -523,7 +523,7 @@ export default function App() {
                   </div>
                   <div className="map-wrapper" style={{ height: 380 }}>
                     <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
-                      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="&copy; CartoDB" />
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                       {zones.map(z => (
                         <CircleMarker key={z.id} center={[z.latitude, z.longitude]} radius={Math.max(6, z.risk_score / 8)}
                           fillColor={riskColor[z.risk_level]} color={riskColor[z.risk_level]} weight={2} fillOpacity={0.75}
@@ -638,7 +638,7 @@ export default function App() {
               <div className="card mb-5">
                 <div className="map-wrapper" style={{ height: 340 }}>
                   <MapContainer center={centerPos} zoom={selectedZone ? 10 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
-                    <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="&copy; CartoDB" />
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                     <MapUpdater center={centerPos} />
                     {zones.map(z => (
                       <CircleMarker key={z.id} center={[z.latitude, z.longitude]} radius={Math.max(6, z.risk_score / 7)}
@@ -752,7 +752,7 @@ export default function App() {
                 <div className="card">
                   <div className="map-wrapper" style={{ height: 380 }}>
                     <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       {alerts.filter(a => a.status === 'active' && a.latitude && a.longitude).map(a => (
                         <CircleMarker key={a.id} center={[a.latitude, a.longitude]} radius={10}
                           fillColor={riskColor[a.risk_level]} color={riskColor[a.risk_level]} weight={3} fillOpacity={0.8}>
@@ -805,7 +805,7 @@ export default function App() {
                 <div className="card">
                   <div className="map-wrapper" style={{ height: 420 }}>
                     <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       {roads.map(r => (
                         <CircleMarker key={r.id} center={[r.latitude, r.longitude]} radius={8}
                           fillColor={roadColors[r.status]} color={roadColors[r.status]} weight={2} fillOpacity={0.8}>
@@ -872,7 +872,7 @@ export default function App() {
                 <div className="card">
                   <div className="map-wrapper" style={{ height: 420 }}>
                     <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }}>
-                      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       {villages.map(v => (
                         <CircleMarker key={v.id} center={[v.latitude, v.longitude]} radius={Math.max(5, v.population / 10000)}
                           fillColor={v.connectivity_status === 'connected' ? '#22c55e' : v.connectivity_status === 'partially_isolated' ? '#eab308' : '#ef4444'}
@@ -974,7 +974,7 @@ export default function App() {
                       </div>
                       <div className="map-wrapper" style={{ height: 320 }}>
                         <MapContainer center={[25.5, 93.0]} zoom={6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-                          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="&copy; CartoDB" />
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                           {predictions.map(p => (
                             <CircleMarker key={p.zone_id} center={[
                               zones.find(z => z.id === p.zone_id)?.latitude || 25.5,

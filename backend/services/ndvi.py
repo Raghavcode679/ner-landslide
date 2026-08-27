@@ -172,12 +172,20 @@ class NDVIService:
         return max(0.0, min(1.0, ndvi))
 
     async def health_check(self) -> Dict:
-        """Check NDVI service availability."""
-        return {
-            "status": "ok",
-            "source": "modis_ner_reference",
-            "note": "24 NER zones with MODIS-derived NDVI. Production: use Google Earth Engine for real-time Sentinel-2.",
-        }
+        """Check NDVI data source availability by testing Open-Meteo satellite API."""
+        import aiohttp
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    "https://api.open-meteo.com/v1/elevation",
+                    params={"latitude": 25.5, "longitude": 93.0},
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as resp:
+                    if resp.status == 200:
+                        return {"status": "ok", "source": "modis_ner_reference", "note": "Local NDVI database + API reachable"}
+                    return {"status": "error", "code": resp.status, "note": "API returned non-200"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "note": "No internet or API unreachable"}
 
 
 import asyncio  # noqa: E402

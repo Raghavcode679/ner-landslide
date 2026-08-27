@@ -559,23 +559,23 @@ async def get_data_sources_status():
     """Health check for all external data APIs. Cached for 60s."""
     now = _time.time()
     # Return cached result if less than 60 seconds old
-    if _data_sources_cache["status"] and (now - _data_sources_cache["last_check"]) < 60:
+    if _data_sources_cache["status"] and (now - _data_sources_cache["last_check"]) < 10:
         return _data_sources_cache["status"]
 
     status = {"real_data_available": REAL_DATA_IMPORTS}
     if REAL_DATA_IMPORTS:
         try:
             status["open_meteo_weather"] = await real_weather_service.health_check()
-        except: status["open_meteo_weather"] = {"status": "ok", "note": "cached"}
+        except: status["open_meteo_weather"] = {"status": "error", "note": "health check failed"}
         try:
             status["sentinel_2_ndvi"] = await ndvi_service.health_check()
-        except: status["sentinel_2_ndvi"] = {"status": "ok", "note": "cached"}
+        except: status["sentinel_2_ndvi"] = {"status": "error", "note": "health check failed"}
         try:
             status["srtm_elevation"] = await elevation_service.health_check()
-        except: status["srtm_elevation"] = {"status": "ok", "note": "cached"}
+        except: status["srtm_elevation"] = {"status": "error", "note": "health check failed"}
         try:
             status["mqtt_sensors"] = sensor_gateway.get_sensor_stats()
-        except: status["mqtt_sensors"] = {"status": "ok", "mqtt_connected": False}
+        except: status["mqtt_sensors"] = {"status": "error", "mqtt_connected": False}
     _data_sources_cache["status"] = status
     _data_sources_cache["last_check"] = now
     return status

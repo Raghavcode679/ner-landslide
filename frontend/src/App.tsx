@@ -356,7 +356,7 @@ export default function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [simulating, setSimulating] = useState(false);
-  const [wsMessages, setWsMessages] = useState<any[]>([]);
+  const [simDone, setSimDone] = useState(false);
   const [showReportForm, setShowReportForm] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
   const [reportStatus, setReportStatus] = useState<{ type: 'success' | 'error' | 'loading' | null; message: string }>({ type: null, message: '' });
@@ -377,7 +377,6 @@ export default function App() {
 
   // WebSocket
   useWebSocket('/ws/alerts', (data) => {
-    setWsMessages(prev => [data, ...prev].slice(0, 20));
     if (data.type === 'new_alert') {
       setAlerts(prev => [{ id: data.alert_id, title: data.zone_name, message: data.message, risk_level: data.risk_level, status: 'active', latitude: 0, longitude: 0, created_at: data.timestamp, zone_id: 0 }, ...prev]);
     }
@@ -429,10 +428,12 @@ export default function App() {
   // Simulate real-time update
   const simulateUpdate = async () => {
     setSimulating(true);
+    setSimDone(false);
     try {
       await postAPI('/simulate/update');
       await loadData();
       await runPredictions();
+      setSimDone(true);
     } catch (e) { console.error(e); }
     setSimulating(false);
   };
@@ -1394,15 +1395,10 @@ export default function App() {
         </div>
       )}
 
-      {/* ============ LIVE FEED ============ */}
-      {wsMessages.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 20, right: 20, width: 300, maxHeight: 200, overflowY: 'auto', background: '#1e293b', borderRadius: 12, border: '1px solid #334155', padding: 12, zIndex: 999 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#60a5fa', marginBottom: 8 }}>📡 Live Feed</div>
-          {wsMessages.slice(0, 5).map((m, i) => (
-            <div key={i} style={{ fontSize: 11, color: '#94a3b8', padding: '3px 0', borderBottom: '1px solid #334155' }}>
-              <span style={{ color: '#64748b' }}>[{m.type}]</span> {m.zone_name || m.road_name || JSON.stringify(m).substring(0, 60)}
-            </div>
-          ))}
+      {/* ============ SIMULATION DONE TOAST ============ */}
+      {simDone && !simulating && (
+        <div style={{ position: 'fixed', bottom: 20, right: 20, background: '#1e293b', borderRadius: 12, border: '1px solid #22c55e44', padding: '10px 16px', zIndex: 999, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#22c55e', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+          ✅ Data updated successfully
         </div>
       )}
 
